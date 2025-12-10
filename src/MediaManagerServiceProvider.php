@@ -5,8 +5,13 @@ namespace Marzio\MediaManager;
 use Filament\Facades\Filament;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use Marzio\MediaManager\Http\Livewire\MediaBulkUploader;
+use Marzio\MediaManager\Http\Livewire\MediaGalleryPickerGrid;
+use Marzio\MediaManager\Http\Livewire\MediaGrid;
+use Marzio\MediaManager\Http\Livewire\MediaPickerGrid;
 
 class MediaManagerServiceProvider extends ServiceProvider {
+
     public function boot(): void {
         // Vistas
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'media-manager');
@@ -34,7 +39,10 @@ class MediaManagerServiceProvider extends ServiceProvider {
         ], 'media-manager-views');
 
         // Livewire components (gestor principal)
-        Livewire::component('media-manager.grid', \Marzio\MediaManager\Http\Livewire\MediaManager::class);
+        Livewire::component('media-manager.media-grid', MediaGrid::class);
+        Livewire::component('media-manager.media-picker-grid', MediaPickerGrid::class);
+        Livewire::component('media-manager.media-gallery-picker-grid', MediaGalleryPickerGrid::class);
+        Livewire::component('media-manager.media-bulk-uploader', MediaBulkUploader::class);
 
         // Registrar custom fields de Filament
         Filament::serving(function () {
@@ -45,8 +53,7 @@ class MediaManagerServiceProvider extends ServiceProvider {
         });
     }
 
-    public function register(): void
-    {
+    public function register(): void {
         // Config merge si usas config/media-manager.php
         $this->mergeConfigFrom(__DIR__ . '/../config/media-manager.php', 'media-manager');
     }

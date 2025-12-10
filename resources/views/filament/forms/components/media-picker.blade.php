@@ -57,7 +57,7 @@
                 <button type="button" class="fi-btn" x-on:click="open=false">✕</button>
             </div>
 
-            <livewire:filament.media-picker-grid lazy
+            <livewire:media-manager.media-picker-grid lazy
                 multiple="false"
                 host-id="{{ $getLivewire()->getId() }}"
                 state-path="{{ $getStatePath() }}"

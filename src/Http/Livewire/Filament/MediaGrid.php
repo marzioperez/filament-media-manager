@@ -2,7 +2,7 @@
 
 namespace Marzio\MediaManager\Http\Livewire;
 
-use App\Models\MediaVault;
+use Marzio\MediaManager\Models\MediaVault;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;

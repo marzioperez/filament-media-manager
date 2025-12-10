@@ -88,7 +88,7 @@
                 <button type="button" class="fi-btn" x-on:click="open = false">✕</button>
             </div>
 
-            <livewire:filament.media-gallery-picker-grid wire:key="gallery-picker" lazy/>
+            <livewire:media-manager.media-gallery-picker-grid wire:key="gallery-picker" lazy/>
         </div>
     </div>
 </div>

@@ -2,7 +2,6 @@
 
 namespace Marzio\MediaManager\Http\Livewire;
 
-use App\Filament\Pages\MediaManager;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -49,7 +48,7 @@ class MediaBulkUploader extends Component {
                 'original' => $candidate,  // nombre a conservar en S3
             ];
         }
-        $this->dispatch('upload-finished', uploads: $items)->to(MediaManager::class);
+        $this->dispatch('upload-finished', uploads: $items);
 
         $this->reset('files');
     }

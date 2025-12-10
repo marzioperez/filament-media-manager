@@ -14,6 +14,10 @@ class MediaManagerServiceProvider extends ServiceProvider {
         // Migraciones (si luego añades para MediaVault, folders, etc.)
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+        $this->publishes([
+            __DIR__ . '/../database/migrations' => database_path('migrations'),
+        ], 'media-manager-migrations');
+
         // Seeders opcionales (se publican)
         $this->publishes([
             __DIR__ . '/../database/seeders/MediaVaultSeeder.php' => database_path('seeders/MediaVaultSeeder.php'),

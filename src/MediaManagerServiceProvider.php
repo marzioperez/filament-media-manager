@@ -45,11 +45,19 @@ class MediaManagerServiceProvider extends ServiceProvider {
         Livewire::component('media-manager.media-bulk-uploader', MediaBulkUploader::class);
 
         // Registrar custom fields de Filament
+        //
+        // Filament v3: `registerFormComponents()` existe y permite aliases (p.ej. 'media-picker').
+        // Filament v4: el método fue removido. Los custom fields se usan directamente vía la clase
+        // (p.ej. `\Marzio\MediaManager\Forms\Components\MediaPicker::make('field')`).
         Filament::serving(function () {
-            Filament::registerFormComponents([
-                'media-picker'  => \Marzio\MediaManager\Forms\Components\MediaPicker::class,
-                'media-gallery' => \Marzio\MediaManager\Forms\Components\MediaGallery::class,
-            ]);
+            $filament = Filament::getFacadeRoot();
+
+            if (method_exists($filament, 'registerFormComponents')) {
+                Filament::registerFormComponents([
+                    'media-picker'  => \Marzio\MediaManager\Forms\Components\MediaPicker::class,
+                    'media-gallery' => \Marzio\MediaManager\Forms\Components\MediaGallery::class,
+                ]);
+            }
         });
     }
 

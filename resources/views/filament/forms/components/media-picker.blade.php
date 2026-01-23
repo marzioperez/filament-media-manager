@@ -40,14 +40,10 @@
 @endphp
 
 <div class="space-y-3"
-     x-data="{
-        value: {{ $applyStateBindingModifiers("\$wire.entangle('{$getStatePath()}')") }}
-     }"
      x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
      x-on:set-media-single.window="
         if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {
-            value = $event.detail.value;
-            $nextTick(() => {
+            $wire.set('{{ $getStatePath() }}', $event.detail.value).then(() => {
                 $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
             });
         }
@@ -59,7 +55,8 @@
     @endif
 
     <x-filament::input.wrapper>
-        <div class="fi-input rounded-xl border border-gray-300/60 dark:border-white/10 bg-white dark:bg-gray-800 p-4 flex items-center justify-center min-h-36">
+        <div class="fi-input rounded-xl border border-gray-300/60 dark:border-white/10 bg-white dark:bg-gray-800 p-4 flex items-center justify-center min-h-36"
+             wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}">
             @if ($url)
                 <img
                     src="{{ $url }}"
@@ -80,7 +77,7 @@
         </x-filament::button>
 
         @if ($id || $url)
-            <x-filament::button size="sm" color="gray" x-on:click="value = null">
+            <x-filament::button size="sm" color="gray" wire:click="$set('{{ $getStatePath() }}', null);">
                 Limpiar
             </x-filament::button>
         @endif

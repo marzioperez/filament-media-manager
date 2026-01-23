@@ -16,6 +16,7 @@ class MediaPicker extends Field {
 
         parent::setUp();
         $this->dehydrated(true);
+        $this->live(onBlur: true);
 
         // Reglas dinámicas según returnType
         $this->rules(fn () => $this->returnType === 'url' ? ['nullable', 'string'] : ['nullable', 'integer']);

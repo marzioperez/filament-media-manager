@@ -1,6 +1,6 @@
 <?php
 
-namespace Marzio\MediaManager\Http\Livewire;
+namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;

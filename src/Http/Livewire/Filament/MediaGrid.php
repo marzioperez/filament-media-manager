@@ -1,7 +1,8 @@
 <?php
 
-namespace Marzio\MediaManager\Http\Livewire;
+namespace Marzio\MediaManager\Http\Livewire\Filament;
 
+use Livewire\Attributes\On;
 use Marzio\MediaManager\Models\MediaVault;
 use Livewire\Component;
 use Livewire\WithPagination;

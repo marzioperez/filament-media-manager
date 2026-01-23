@@ -5,10 +5,10 @@ namespace Marzio\MediaManager;
 use Filament\Facades\Filament;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
-use Marzio\MediaManager\Http\Livewire\MediaBulkUploader;
-use Marzio\MediaManager\Http\Livewire\MediaGalleryPickerGrid;
-use Marzio\MediaManager\Http\Livewire\MediaGrid;
-use Marzio\MediaManager\Http\Livewire\MediaPickerGrid;
+use Marzio\MediaManager\Http\Livewire\Filament\MediaBulkUploader;
+use Marzio\MediaManager\Http\Livewire\Filament\MediaGalleryPickerGrid;
+use Marzio\MediaManager\Http\Livewire\Filament\MediaGrid;
+use Marzio\MediaManager\Http\Livewire\Filament\MediaPickerGrid;
 
 class MediaManagerServiceProvider extends ServiceProvider {
 

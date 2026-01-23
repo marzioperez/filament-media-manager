@@ -40,11 +40,16 @@
 @endphp
 
 <div class="space-y-3"
+     x-data="{
+        value: {{ $applyStateBindingModifiers("\$wire.entangle('{$getStatePath()}')") }}
+     }"
      x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
      x-on:set-media-single.window="
         if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {
-            $wire.set('{{ $getStatePath() }}', $event.detail.value);
-            $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
+            value = $event.detail.value;
+            $nextTick(() => {
+                $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
+            });
         }
      ">
     @if (isset($label))
@@ -75,7 +80,7 @@
         </x-filament::button>
 
         @if ($id || $url)
-            <x-filament::button size="sm" color="gray" wire:click="$set('{{ $getStatePath() }}', null);">
+            <x-filament::button size="sm" color="gray" x-on:click="value = null">
                 Limpiar
             </x-filament::button>
         @endif

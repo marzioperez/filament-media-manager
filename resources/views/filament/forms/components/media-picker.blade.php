@@ -74,33 +74,22 @@
         @endif
     </div>
 
-    <div x-show="open"
-         x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style="background-color: rgba(0, 0, 0, 0.5);"
-         x-on:click.self="open = false">
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-             x-on:click.stop>
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Seleccionar recurso</h3>
-                <button type="button"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-                        x-on:click="open=false">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
+    <x-filament::modal
+        id="media-picker-modal-{{ $getId() }}"
+        width="5xl"
+        x-bind:open="open"
+        x-on:close="open = false"
+    >
+        <x-slot name="heading">
+            Seleccionar recurso
+        </x-slot>
 
-            <div class="flex-1 overflow-y-auto p-4">
-                <livewire:media-manager.media-picker-grid lazy
-                    multiple="false"
-                    host-id="{{ $getLivewire()->getId() }}"
-                    state-path="{{ $getStatePath() }}"
-                    :preset="$id"
-                    wire:key="picker-{{ $getId() }}-{{ (int) $id }}"
-                />
-            </div>
-        </div>
-    </div>
+        <livewire:media-manager.media-picker-grid lazy
+            multiple="false"
+            host-id="{{ $getLivewire()->getId() }}"
+            state-path="{{ $getStatePath() }}"
+            :preset="$id"
+            wire:key="picker-{{ $getId() }}-{{ (int) $id }}"
+        />
+    </x-filament::modal>
 </div>

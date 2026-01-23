@@ -9,11 +9,16 @@ class MediaPicker extends Field {
 
     protected string $view = 'media-manager::filament.forms.components.media-picker';
 
+    protected string $returnType = 'id'; // 'id' o 'url'
+    protected string $conversionName = 'webp'; // conversión a usar cuando returnType = 'url'
+
     protected function setUp(): void {
 
         parent::setUp();
         $this->dehydrated(true);
-        $this->rules(['nullable', 'integer']);
+
+        // Reglas dinámicas según returnType
+        $this->rules(fn () => $this->returnType === 'url' ? ['nullable', 'string'] : ['nullable', 'integer']);
 
         $this->afterStateUpdated(function ($state, callable $set) {
             $id = null;
@@ -32,6 +37,11 @@ class MediaPicker extends Field {
         });
 
         $this->dehydrateStateUsing(function ($state) {
+            if ($this->returnType === 'url') {
+                return $this->getUrlFromState($state);
+            }
+
+            // Modo ID (default)
             if (is_numeric($state)) {
                 return (int) $state;
             }
@@ -49,9 +59,57 @@ class MediaPicker extends Field {
         });
     }
 
+    protected function getUrlFromState($state): ?string {
+        $id = null;
+
+        if (is_numeric($state)) {
+            $id = (int) $state;
+        } elseif (is_array($state)) {
+            $id = isset($state['id']) ? (int) $state['id'] : null;
+        } elseif (is_object($state) && isset($state->id)) {
+            $id = (int) $state->id;
+        }
+
+        if (!$id) {
+            return null;
+        }
+
+        $media = Media::find($id);
+        if (!$media) {
+            return null;
+        }
+
+        try {
+            if ($media->hasGeneratedConversion($this->conversionName)) {
+                return $media->getUrl($this->conversionName);
+            }
+            return $media->getUrl();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public function returnUrl(string $conversionName = 'webp'): static {
+        $this->returnType = 'url';
+        $this->conversionName = $conversionName;
+        return $this;
+    }
+
+    public function returnId(): static {
+        $this->returnType = 'id';
+        return $this;
+    }
+
+    public function conversion(string $name): static {
+        $this->conversionName = $name;
+        return $this;
+    }
+
     public function getViewData(): array {
         return array_merge(parent::getViewData(), [
             'label' => $this->getLabel(),
+            'returnType' => $this->returnType,
+            'conversionName' => $this->conversionName,
         ]);
     }
 

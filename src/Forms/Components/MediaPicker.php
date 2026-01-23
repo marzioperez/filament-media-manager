@@ -16,18 +16,12 @@ class MediaPicker extends Field {
 
         parent::setUp();
         $this->dehydrated(true);
-        $this->live();
 
-        // Reglas dinámicas según returnType
-        $this->rules(fn () => $this->returnType === 'url' ? ['nullable', 'string'] : ['nullable', 'integer']);
+        // Reglas: siempre integer internamente (ID), conversión a URL solo al deshidratar
+        $this->rules(['nullable', 'integer']);
 
-        $this->afterStateUpdated(function ($state, callable $set) {
-            // Si returnType es 'url', no normalizar a ID
-            if ($this->returnType === 'url') {
-                return;
-            }
-
-            // Solo normalizar a ID si returnType es 'id'
+        $this->dehydrateStateUsing(function ($state) {
+            // Normalizar a ID primero
             $id = null;
             if (is_numeric($state)) {
                 $id = (int) $state;
@@ -35,37 +29,19 @@ class MediaPicker extends Field {
                 $id = isset($state['id']) ? (int) $state['id'] : null;
             } elseif (is_object($state) && isset($state->id)) {
                 $id = (int) $state->id;
-            } elseif (is_string($state) && !filter_var($state, FILTER_VALIDATE_URL)) {
-                // Solo convertir UUID a ID si no es una URL
-                $id = Media::query()->where('uuid', $state)->value('id');
-                $id = $id ? (int) $id : null;
             }
 
-            if ($id !== null) {
-                $set($this->getName(), $id);
+            if (!$id) {
+                return null;
             }
-        });
 
-        $this->dehydrateStateUsing(function ($state) {
+            // Si returnType es 'url', convertir ID a URL
             if ($this->returnType === 'url') {
-                return $this->getUrlFromState($state);
+                return $this->getUrlFromState($id);
             }
 
-            // Modo ID (default)
-            if (is_numeric($state)) {
-                return (int) $state;
-            }
-            if (is_array($state)) {
-                return isset($state['id']) ? (int) $state['id'] : null;
-            }
-            if (is_object($state) && isset($state->id)) {
-                return (int) $state->id;
-            }
-            if (is_string($state)) {
-                $id = Media::query()->where('uuid', $state)->value('id');
-                return $id ? (int) $id : null;
-            }
-            return null;
+            // Modo ID (default): devolver el ID
+            return $id;
         });
     }
 

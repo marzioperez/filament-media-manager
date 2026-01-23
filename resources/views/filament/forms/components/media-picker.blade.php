@@ -39,7 +39,14 @@
     }
 @endphp
 
-<div class="space-y-3" x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })">
+<div class="space-y-3"
+     x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
+     x-on:set-media-single.window="
+        if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {
+            $wire.set('{{ $getStatePath() }}', $event.detail.value);
+            $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
+        }
+     ">
     @if (isset($label))
         <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $label }}</label>

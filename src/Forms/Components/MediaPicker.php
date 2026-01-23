@@ -21,6 +21,12 @@ class MediaPicker extends Field {
         $this->rules(fn () => $this->returnType === 'url' ? ['nullable', 'string'] : ['nullable', 'integer']);
 
         $this->afterStateUpdated(function ($state, callable $set) {
+            // Si returnType es 'url', no normalizar a ID
+            if ($this->returnType === 'url') {
+                return;
+            }
+
+            // Solo normalizar a ID si returnType es 'id'
             $id = null;
             if (is_numeric($state)) {
                 $id = (int) $state;
@@ -28,12 +34,15 @@ class MediaPicker extends Field {
                 $id = isset($state['id']) ? (int) $state['id'] : null;
             } elseif (is_object($state) && isset($state->id)) {
                 $id = (int) $state->id;
-            } elseif (is_string($state)) {
+            } elseif (is_string($state) && !filter_var($state, FILTER_VALIDATE_URL)) {
+                // Solo convertir UUID a ID si no es una URL
                 $id = Media::query()->where('uuid', $state)->value('id');
                 $id = $id ? (int) $id : null;
             }
 
-            $set($this->getName(), $id);
+            if ($id !== null) {
+                $set($this->getName(), $id);
+            }
         });
 
         $this->dehydrateStateUsing(function ($state) {

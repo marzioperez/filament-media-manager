@@ -53,11 +53,15 @@ class MediaPickerGrid extends Component {
             });
         }
 
-        // Ordenar: seleccionado primero, luego los más recientes
-        if ($this->selected) {
-            $selectedMedia = Media::where('uuid', $this->selected)->first();
-            if ($selectedMedia) {
-                $query->orderByRaw('id = ? DESC', [$selectedMedia->id]);
+        // Ordenar: preseleccionado (preset) primero solo al cargar inicialmente
+        if ($this->preset && !$this->search) {
+            $presetId = is_numeric($this->preset) ? $this->preset : null;
+            if (!$presetId) {
+                $presetMedia = Media::where('uuid', $this->preset)->first();
+                $presetId = $presetMedia?->id;
+            }
+            if ($presetId) {
+                $query->orderByRaw('id = ? DESC', [$presetId]);
             }
         }
 

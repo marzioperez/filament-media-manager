@@ -15,6 +15,7 @@ class MediaPickerGrid extends Component {
     public string $hostId;
     public string $statePath;
     public $selected = null;
+    public string $search = '';
 
     public function mount($preset = null) {
         $this->applyPreset($preset);
@@ -33,8 +34,34 @@ class MediaPickerGrid extends Component {
         $this->applyPreset($value);
     }
 
+    public function updatingSearch(): void {
+        $this->resetPage();
+    }
+
     public function getItemsProperty() {
-        return Media::query()->where('model_type', MediaVault::class)->where('model_id',1)->latest()->paginate(18);
+        $query = Media::query()
+            ->where('model_type', MediaVault::class)
+            ->where('model_id', 1);
+
+        // Aplicar búsqueda
+        if ($this->search) {
+            $query->where(function($q) {
+                $s = '%' . $this->search . '%';
+                $q->where('file_name', 'like', $s)
+                  ->orWhere('name', 'like', $s)
+                  ->orWhere('mime_type', 'like', $s);
+            });
+        }
+
+        // Ordenar: seleccionado primero, luego los más recientes
+        if ($this->selected) {
+            $selectedMedia = Media::where('uuid', $this->selected)->first();
+            if ($selectedMedia) {
+                $query->orderByRaw('id = ? DESC', [$selectedMedia->id]);
+            }
+        }
+
+        return $query->latest('id')->paginate(18);
     }
 
     public function toggle(string $uuid): void {

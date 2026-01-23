@@ -11,10 +11,11 @@ class MediaGalleryPickerGrid extends Component {
 
     use WithPagination;
     public array $selected = [];
+    public string $search = '';
 
     public int $perPage = 24;
 
-    public function updatingQ(): void {
+    public function updatingSearch(): void {
         $this->resetPage();
     }
 
@@ -36,7 +37,26 @@ class MediaGalleryPickerGrid extends Component {
     }
 
     public function getItemsProperty() {
-        return Media::query()->where('model_type', MediaVault::class)->where('model_id', 1)->latest()->paginate(18);
+        $query = Media::query()
+            ->where('model_type', MediaVault::class)
+            ->where('model_id', 1);
+
+        // Aplicar búsqueda
+        if ($this->search) {
+            $query->where(function($q) {
+                $s = '%' . $this->search . '%';
+                $q->where('file_name', 'like', $s)
+                  ->orWhere('name', 'like', $s)
+                  ->orWhere('mime_type', 'like', $s);
+            });
+        }
+
+        // Ordenar: seleccionados primero, luego los más recientes
+        if (!empty($this->selected)) {
+            $query->orderByRaw('FIELD(id, ' . implode(',', array_map('intval', $this->selected)) . ') DESC');
+        }
+
+        return $query->latest('id')->paginate(18);
     }
 
     public function render() {

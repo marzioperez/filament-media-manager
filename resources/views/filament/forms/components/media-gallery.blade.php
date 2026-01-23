@@ -5,7 +5,6 @@
 
 <div
     x-data="{
-        open: false,
         value: {{ $applyStateBindingModifiers("\$wire.entangle('{$getStatePath()}')") }},
 
         uid(){
@@ -54,12 +53,12 @@
         }
     }"
     x-init="value = ensureKeys(toRows(value))"
-    @media-gallery-picked.window="add($event.detail.ids); open = false"
-    @close-gallery-picker.window="open=false"
+    @media-gallery-picked.window="add($event.detail.ids); $dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+    @close-gallery-picker.window="$dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
     class="space-y-3"
 >
     <div class="flex gap-2">
-        <x-filament::button size="sm" x-on:click="open = true">Seleccionar recursos</x-filament::button>
+        <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })">Seleccionar recursos</x-filament::button>
         <x-filament::button size="sm" color="gray" x-show="value.length" x-on:click="clearAll()">Limpiar</x-filament::button>
     </div>
 
@@ -84,13 +83,11 @@
     <x-filament::modal
         id="media-gallery-modal-{{ $getId() }}"
         width="5xl"
-        x-bind:open="open"
-        x-on:close="open = false"
     >
         <x-slot name="heading">
             Seleccionar recursos
         </x-slot>
 
-        <livewire:media-manager.media-gallery-picker-grid wire:key="gallery-picker" lazy/>
+        <livewire:media-manager.media-gallery-picker-grid wire:key="gallery-picker-{{ $getId() }}" lazy/>
     </x-filament::modal>
 </div>

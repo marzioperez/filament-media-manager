@@ -39,7 +39,7 @@
     }
 @endphp
 
-<div class="space-y-3" x-data="{ open: false }" x-on:close-picker.window="open = false;">
+<div class="space-y-3" x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })">
     @if (isset($label))
         <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $label }}</label>
@@ -63,7 +63,7 @@
     </x-filament::input.wrapper>
 
     <div class="flex gap-2">
-        <x-filament::button size="sm" x-data x-on:click="open = true">
+        <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })">
             Seleccionar recurso
         </x-filament::button>
 
@@ -77,8 +77,6 @@
     <x-filament::modal
         id="media-picker-modal-{{ $getId() }}"
         width="5xl"
-        x-bind:open="open"
-        x-on:close="open = false"
     >
         <x-slot name="heading">
             Seleccionar recurso

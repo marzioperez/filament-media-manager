@@ -16,6 +16,7 @@ class MediaPicker extends Field {
 
         parent::setUp();
         $this->dehydrated(true);
+        $this->live(onBlur: false);
 
         // Reglas: siempre integer internamente (ID), conversión a URL solo al deshidratar
         $this->rules(['nullable', 'integer']);

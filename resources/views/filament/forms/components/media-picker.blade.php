@@ -40,31 +40,13 @@
 @endphp
 
 <div class="space-y-3"
-     x-data="{
-        currentId: @js($id),
-        previewUrl: @js($url),
-
-        async loadPreview(mediaId) {
-            if (!mediaId) {
-                this.previewUrl = null;
-                return;
-            }
-
-            // Trigger Livewire to fetch fresh data
-            await $wire.call('$refresh');
-        }
-     }"
      x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
      x-on:set-media-single.window="
         if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {
-            currentId = $event.detail.value;
-            $wire.set('{{ $getStatePath() }}', $event.detail.value).then(() => {
-                loadPreview(currentId);
-                $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
-            });
+            $wire.set('{{ $getStatePath() }}', $event.detail.value);
+            $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
         }
-     "
-     x-init="$watch('currentId', (value) => { if (!value) previewUrl = null; })">
+     ">
     @if (isset($label))
         <div>
             <label class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $label }}</label>
@@ -94,7 +76,7 @@
         </x-filament::button>
 
         @if ($id || $url)
-            <x-filament::button size="sm" color="gray" x-on:click="currentId = null; $wire.set('{{ $getStatePath() }}', null);">
+            <x-filament::button size="sm" color="gray" wire:click="$set('{{ $getStatePath() }}', null);">
                 Limpiar
             </x-filament::button>
         @endif

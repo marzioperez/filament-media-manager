@@ -31,7 +31,7 @@
                     @checked($isSelected)
                     wire:key="media-{{ $m->id }}"
                 >
-                <img src="{{ $thumb }}" alt="{{ $m->file_name }}" class="h-28 w-full object-cover rounded border {{ $isSelected ? 'border-primary-500 border-2' : 'border-gray-200/60 dark:border-white/10' }} group-hover:opacity-90" />
+                <img src="{{ $thumb }}" alt="{{ $m->file_name }}" class="aspect-square w-full object-cover rounded border {{ $isSelected ? 'border-primary-500 border-2' : 'border-gray-200/60 dark:border-white/10' }} group-hover:opacity-90" />
                 @if($isSelected)
                     <div class="absolute inset-0 bg-primary-500/10 rounded"></div>
                 @endif

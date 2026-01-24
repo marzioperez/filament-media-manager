@@ -54,23 +54,23 @@
     @endif
 
     <x-filament::input.wrapper>
-        <div class="fi-input rounded-xl border border-gray-300/60 dark:border-white/10 bg-white dark:bg-gray-800 p-4 flex items-center justify-center min-h-36"
+        <div class="media-picker-preview fi-input border border-gray-300/60 dark:border-white/10 bg-white dark:bg-gray-800 flex items-center justify-center"
              wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}">
             @if ($url)
                 <img
                     src="{{ $url }}"
                     alt="{{ $media ? $media->file_name : 'Preview' }}"
-                    class="h-32 w-32 object-cover rounded-lg border border-gray-200/60 dark:border-white/10"
+                    class="h-32 w-32 object-cover rounded-lg border border-gray-200/60 dark:border-white/10 shadow-sm"
                 />
             @else
-                <div class="h-32 w-32 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs text-gray-500">
+                <div class="media-picker-empty-state bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                     Sin selección
                 </div>
             @endif
         </div>
     </x-filament::input.wrapper>
 
-    <div class="flex gap-2">
+    <div class="media-picker-buttons">
         <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })">
             Seleccionar recurso
         </x-filament::button>

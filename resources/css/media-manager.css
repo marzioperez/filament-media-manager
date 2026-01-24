@@ -1,0 +1,118 @@
+/* Media Manager Styles */
+
+/* Grid spacing improvements */
+.media-manager-grid {
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.media-manager-grid-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.media-manager-grid-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Preview container improvements */
+.media-picker-preview {
+    min-height: 9rem;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid;
+    transition: all 0.2s ease-in-out;
+}
+
+.media-picker-preview:hover {
+    border-color: rgb(var(--primary-500));
+}
+
+.media-picker-empty-state {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    padding: 1rem;
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Modal search spacing */
+.media-picker-search-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+/* Grid items aspect ratio fix */
+.media-grid-image {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 0.5rem;
+}
+
+/* Selected state visual improvements */
+.media-grid-selected-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(var(--primary-500), 0.15) 0%, rgba(var(--primary-600), 0.25) 100%);
+    border: 2px solid rgb(var(--primary-500));
+    border-radius: 0.75rem;
+    pointer-events: none;
+}
+
+/* Checkbox positioning */
+.media-grid-checkbox {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    z-index: 10;
+    height: 1.125rem;
+    width: 1.125rem;
+    border-radius: 0.25rem;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Buttons spacing */
+.media-picker-buttons {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+}
+
+/* Modal content spacing */
+.media-picker-modal-content {
+    padding: 1.5rem;
+}
+
+/* Main media manager page grid */
+.media-manager-main-grid {
+    gap: 1.25rem;
+    padding: 0.75rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .media-manager-grid {
+        gap: 1rem;
+    }
+
+    .media-picker-preview {
+        padding: 1rem;
+    }
+
+    .media-picker-empty-state {
+        width: 6rem;
+        height: 6rem;
+    }
+}

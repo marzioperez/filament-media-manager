@@ -1,6 +1,6 @@
-<div class="space-y-4">
+<div class="space-y-6">
     <div class="flex items-center justify-between gap-4">
-        <div class="flex-1">
+        <div class="flex-1 media-picker-search-wrapper">
             <x-filament::input.wrapper>
                 <x-filament::input
                     type="search"
@@ -16,24 +16,24 @@
         @endif
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="media-manager-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         @foreach ($items as $m)
             @php
                 $thumb = $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl();
                 $isSelected = in_array($m->id, $selected, true);
             @endphp
-            <label class="group relative block cursor-pointer">
+            <label class="media-manager-grid-item group relative block cursor-pointer">
                 <input
                     type="checkbox"
-                    class="absolute left-2 top-2 z-10 h-4 w-4 rounded border-gray-300"
+                    class="media-grid-checkbox"
                     value="{{ $m->id }}"
                     wire:model.live="selected"
                     @checked($isSelected)
                     wire:key="media-{{ $m->id }}"
                 >
-                <img src="{{ $thumb }}" alt="{{ $m->file_name }}" class="aspect-square w-full object-cover rounded border {{ $isSelected ? 'border-primary-500 border-2' : 'border-gray-200/60 dark:border-white/10' }} group-hover:opacity-90" />
+                <img src="{{ $thumb }}" alt="{{ $m->file_name }}" class="media-grid-image border {{ $isSelected ? 'border-primary-500 border-2' : 'border-gray-200/60 dark:border-white/10' }} group-hover:opacity-90" />
                 @if($isSelected)
-                    <div class="absolute inset-0 bg-primary-500/10 rounded"></div>
+                    <div class="media-grid-selected-overlay"></div>
                 @endif
             </label>
         @endforeach

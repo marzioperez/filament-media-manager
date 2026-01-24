@@ -3,13 +3,13 @@
         <x-filament::section heading="Recursos multimedia">
             <div class="fi-sc-component">
                 <div class="space-y-6">
-                    <div class="fi-sc fi-sc-has-gap fi-grid  sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(4, minmax(0, 1fr)); --cols-2xl: repeat(4, minmax(0, 1fr));">
+                    <div class="media-manager-main-grid fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(4, minmax(0, 1fr)); --cols-2xl: repeat(4, minmax(0, 1fr));">
                         @foreach($media as $m)
                             @php
                                 $isImage = str_starts_with($m->mime_type, 'image/');
                                 $isPdf = $m->mime_type === 'application/pdf' || \Illuminate\Support\Str::endsWith(strtolower($m->file_name), '.pdf');
                             @endphp
-                            <div class="cursor-pointer hover:opacity-75 flex items-center justify-center"
+                            <div class="media-manager-grid-item cursor-pointer flex items-center justify-center"
                                 @click="selected = {
                                     id: {{ $m->id }},
                                     uuid: '{{ $m->uuid }}',
@@ -21,7 +21,7 @@
                                 }"
                             >
                                 @if($isImage)
-                                    <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getFullUrl('webp') : $m->getUrl() }}" alt="{{ $m->file_name }}" class="w-full rounded" style="max-height: 250px; object-fit: cover; object-position: center;" />
+                                    <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getFullUrl('webp') : $m->getUrl() }}" alt="{{ $m->file_name }}" class="media-grid-image w-full" />
                                 @elseif($isPdf)
                                     <div class="w-full rounded p-6 dark:bg-gray-800">
                                         <svg fill="#c8090b" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">

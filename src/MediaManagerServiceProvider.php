@@ -3,6 +3,8 @@
 namespace Marzio\MediaManager;
 
 use Filament\Facades\Filament;
+use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Assets\Css;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaBulkUploader;
@@ -37,6 +39,16 @@ class MediaManagerServiceProvider extends ServiceProvider {
         $this->publishes([
             __DIR__ . '/../resources/views' => resource_path('views/vendor/media-manager'),
         ], 'media-manager-views');
+
+        // CSS
+        $this->publishes([
+            __DIR__ . '/../resources/css' => public_path('vendor/media-manager/css'),
+        ], 'media-manager-assets');
+
+        // Registrar CSS en Filament
+        FilamentAsset::register([
+            Css::make('media-manager-styles', __DIR__ . '/../resources/css/media-manager.css'),
+        ], 'marzio/media-manager');
 
         // Livewire components (gestor principal)
         Livewire::component('media-manager.media-grid', MediaGrid::class);

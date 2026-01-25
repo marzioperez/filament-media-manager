@@ -21,7 +21,7 @@
 /* Preview container improvements */
 .media-picker-preview {
     min-height: 9rem;
-    padding: 1.5rem;
+    padding: 0.8rem;
     border-radius: 0.75rem;
     border: 1px solid;
     transition: all 0.2s ease-in-out;
@@ -53,7 +53,7 @@
 .media-grid-image {
     aspect-ratio: 1 / 1;
     width: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     border-radius: 0.5rem;
 }
@@ -99,6 +99,10 @@
 .media-manager-main-grid {
     gap: 1.25rem;
     padding: 0.75rem 0;
+}
+
+section.fi-section {
+    margin-bottom: 15px;
 }
 
 /* Responsive adjustments */

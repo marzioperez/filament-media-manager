@@ -39,7 +39,7 @@
     }
 @endphp
 
-<div class="space-y-3"
+<div class="fi-fo-field"
      x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
      x-on:set-media-single.window="
         if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {

@@ -65,7 +65,7 @@ class MediaPickerGrid extends Component {
             }
         }
 
-        return $query->latest('id')->paginate(18);
+        return $query->latest('id')->paginate(12);
     }
 
     public function toggle(string $uuid): void {

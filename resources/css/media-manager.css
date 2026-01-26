@@ -52,7 +52,7 @@
 .media-grid-image {
     aspect-ratio: 1 / 1;
     width: 100%;
-    object-fit: contain;
+    object-fit: scale-down;
     object-position: center;
     border-radius: 0.5rem;
 }

@@ -39,7 +39,7 @@ class MediaGrid extends Component {
                 $s = "%".$this->search."%";
                 $qq->where('file_name','like',$s)->orWhere('mime_type','like',$s);
             }))
-            ->latest()->paginate(10);
+            ->latest()->paginate(12);
     }
 
     public function moveSelected(): void {

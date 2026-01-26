@@ -56,7 +56,7 @@ class MediaGalleryPickerGrid extends Component {
             $query->orderByRaw('FIELD(id, ' . implode(',', array_map('intval', $this->selected)) . ') DESC');
         }
 
-        return $query->latest('id')->paginate(18);
+        return $query->latest('id')->paginate(16);
     }
 
     public function render() {

@@ -54,7 +54,7 @@
     @endif
 
     <x-filament::input.wrapper>
-        <div class="media-picker-preview fi-input border border-gray-300/60 dark:border-white/10 bg-white dark:bg-gray-800 flex items-center justify-center"
+        <div class="media-picker-preview fi-input border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 flex items-center justify-center"
              wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}">
             @if ($url)
                 <img

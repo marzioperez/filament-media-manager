@@ -13,7 +13,7 @@
         @foreach($media as $m)
             <label class="media-manager-grid-item block overflow-hidden cursor-pointer group relative">
                 <input type="checkbox" class="sr-only" value="{{ $m->uuid }}" @checked($m->uuid == $selected) wire:click="toggle('{{ $m->uuid }}')">
-                <img src="{{ $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl() }}" alt="" class="media-grid-image" />
+                <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getUrl('webp') : $m->getUrl() }}" alt="" class="media-grid-image" />
                 @if($m->uuid == $selected)
                     <div class="media-grid-selected-overlay"></div>
                 @endif

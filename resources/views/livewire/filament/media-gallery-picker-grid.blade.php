@@ -19,7 +19,7 @@
     <div class="media-manager-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         @foreach ($items as $m)
             @php
-                $thumb = $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl();
+                $thumb = $m->hasGeneratedConversion('webp') ? $m->getUrl('webp') : $m->getUrl();
                 $isSelected = in_array($m->id, $selected, true);
             @endphp
             <label class="media-manager-grid-item group relative block cursor-pointer">

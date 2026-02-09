@@ -16,7 +16,17 @@ class MediaVault extends Model implements HasMedia {
     protected $guarded = [];
 
     public function registerMediaConversions(?Media $media = null): void {
-        $this->addMediaConversion('thumb')->fit(Fit::Crop, 400, 400)->format('webp')->quality(80)->queued();
-        $this->addMediaConversion('webp')->format('webp')->quality(82)->queued();
+        // Thumbnail: mantiene aspect ratio, máximo 400px en el lado más grande
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Max, 400, 400)
+            ->format('webp')
+            ->quality(80)
+            ->queued();
+
+        // WebP: convierte a WebP sin cambiar dimensiones
+        $this->addMediaConversion('webp')
+            ->format('webp')
+            ->quality(82)
+            ->queued();
     }
 }

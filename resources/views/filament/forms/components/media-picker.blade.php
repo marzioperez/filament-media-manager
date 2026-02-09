@@ -32,7 +32,8 @@
     // Si no tenemos URL pero tenemos media, obtenerla
     if (!$url && $media) {
         try {
-            $url = $media->hasGeneratedConversion('thumb') ? $media->getUrl('thumb') : $media->getUrl();
+            // Usar webp o la imagen original, NO usar thumb porque está recortada
+            $url = $media->hasGeneratedConversion('webp') ? $media->getUrl('webp') : $media->getUrl();
         } catch (\Throwable $e) {
             $url = null;
         }

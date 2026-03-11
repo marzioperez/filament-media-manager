@@ -18,9 +18,6 @@ class MediaPicker extends Field {
         $this->dehydrated(true);
         $this->live(onBlur: false);
 
-        // Reglas: siempre integer internamente (ID), conversión a URL solo al deshidratar
-        //$this->rules(['nullable', 'integer']);
-
         $this->dehydrateStateUsing(function ($state) {
             // Normalizar a ID primero
             $id = null;
@@ -30,6 +27,8 @@ class MediaPicker extends Field {
                 $id = isset($state['id']) ? (int) $state['id'] : null;
             } elseif (is_object($state) && isset($state->id)) {
                 $id = (int) $state->id;
+            } elseif ($this->returnType === 'url' && is_string($state) && filter_var($state, FILTER_VALIDATE_URL)) {
+                return $state; // Ya es URL, devolverla sin cambios
             }
 
             if (!$id) {

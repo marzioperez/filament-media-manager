@@ -38,6 +38,15 @@
             $url = null;
         }
     }
+
+    $isImage = $media ? str_starts_with($media->mime_type, 'image/') : ($url !== null);
+    $isPdf = $media && ($media->mime_type === 'application/pdf' || \Illuminate\Support\Str::endsWith(strtolower($media->file_name ?? ''), '.pdf'));
+    $isVideo = $media && str_starts_with($media->mime_type ?? '', 'video/');
+    $isAudio = $media && str_starts_with($media->mime_type ?? '', 'audio/');
+    $isSpreadsheet = $media && (str_contains($media->mime_type ?? '', 'spreadsheet') || str_contains($media->mime_type ?? '', 'excel') || in_array(strtolower(pathinfo($media->file_name ?? '', PATHINFO_EXTENSION)), ['xlsx', 'xls', 'csv']));
+    $isWord = $media && (str_contains($media->mime_type ?? '', 'wordprocessing') || str_contains($media->mime_type ?? '', 'msword') || in_array(strtolower(pathinfo($media->file_name ?? '', PATHINFO_EXTENSION)), ['docx', 'doc']));
+    $isZip = $media && (str_contains($media->mime_type ?? '', 'zip') || str_contains($media->mime_type ?? '', 'compressed') || str_contains($media->mime_type ?? '', 'archive'));
+    $fileExtension = $media ? strtoupper(pathinfo($media->file_name ?? '', PATHINFO_EXTENSION)) : '';
 @endphp
 
 <div class="fi-fo-field"
@@ -57,12 +66,31 @@
     <x-filament::input.wrapper>
         <div class="media-picker-preview fi-input border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 flex items-center justify-center"
              wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}">
-            @if ($url)
+            @if ($media && $isImage)
                 <img
                     src="{{ $url }}"
-                    alt="{{ $media ? $media->file_name : 'Preview' }}"
+                    alt="{{ $media->file_name }}"
                     class="h-32 w-32 object-cover rounded-lg border border-gray-200/60 dark:border-white/10 shadow-sm"
                 />
+            @elseif ($media && !$isImage)
+                <div class="h-32 w-32 flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-200/60 dark:border-white/10 bg-gray-50 dark:bg-gray-700 p-2">
+                    @if ($isPdf)
+                        <x-filament::icon icon="heroicon-o-document-text" class="h-10 w-10 text-red-500" />
+                    @elseif ($isVideo)
+                        <x-filament::icon icon="heroicon-o-film" class="h-10 w-10 text-purple-500" />
+                    @elseif ($isAudio)
+                        <x-filament::icon icon="heroicon-o-musical-note" class="h-10 w-10 text-blue-500" />
+                    @elseif ($isSpreadsheet)
+                        <x-filament::icon icon="heroicon-o-table-cells" class="h-10 w-10 text-green-500" />
+                    @elseif ($isWord)
+                        <x-filament::icon icon="heroicon-o-document" class="h-10 w-10 text-blue-600" />
+                    @elseif ($isZip)
+                        <x-filament::icon icon="heroicon-o-archive-box" class="h-10 w-10 text-yellow-600" />
+                    @else
+                        <x-filament::icon icon="heroicon-o-paper-clip" class="h-10 w-10 text-gray-400" />
+                    @endif
+                    <span class="text-[10px] text-gray-500 dark:text-gray-400 text-center truncate w-full leading-tight">{{ $media->file_name }}</span>
+                </div>
             @else
                 <div class="media-picker-empty-state bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                     Sin selección

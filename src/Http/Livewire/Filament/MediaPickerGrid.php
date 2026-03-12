@@ -2,20 +2,26 @@
 
 namespace Marzio\MediaManager\Http\Livewire\Filament;
 
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Marzio\MediaManager\Models\MediaVault;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaPickerGrid extends Component {
 
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $preset = null;
     public string $hostId;
     public string $statePath;
     public $selected = null;
     public string $search = '';
+    public array $pickerFiles = [];
+    public bool $isUploading = false;
 
     public function mount($preset = null) {
         $this->applyPreset($preset);
@@ -76,6 +82,53 @@ class MediaPickerGrid extends Component {
         $ids = Media::where('uuid', $this->selected)->pluck('id', 'uuid');
         $this->dispatch('set-media-single', hostId: $this->hostId, statePath: $this->statePath, value: $ids[$this->selected]);
         $this->dispatch('close-picker');
+    }
+
+    public function updatedPickerFiles(): void {
+        $this->isUploading = true;
+
+        $vault = MediaVault::firstOrCreate(['id' => 1]);
+        $disk = 'private';
+        $dir = 'tmp-media';
+
+        foreach ($this->pickerFiles as $file) {
+            $original = $file->getClientOriginalName();
+            $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
+            $base = pathinfo($original, PATHINFO_FILENAME);
+            $safeBase = Str::slug($base, '-');
+            if ($safeBase === '') {
+                $safeBase = 'file';
+            }
+            $candidate = $safeBase . ($ext ? ('.' . $ext) : '');
+
+            $i = 0;
+            while (Storage::disk($disk)->exists($dir . '/' . $candidate)) {
+                $i++;
+                $candidate = $safeBase . '-' . $i . ($ext ? ('.' . $ext) : '');
+            }
+
+            $relative = $file->storeAs($dir, $candidate, $disk);
+
+            $vault
+                ->addMediaFromDisk($relative, $disk)
+                ->usingFileName($candidate)
+                ->usingName(pathinfo($candidate, PATHINFO_FILENAME))
+                ->toMediaCollection('assets', 'media-manager');
+
+            Storage::disk($disk)->delete($relative);
+        }
+
+        $this->reset('pickerFiles');
+        $this->isUploading = false;
+        $this->resetPage();
+
+        Notification::make()
+            ->title('Archivos cargados correctamente')
+            ->success()
+            ->send();
+
+        // También refrescar la grid principal si está abierta detrás del modal
+        $this->dispatch('refresh-media-grid');
     }
 
     public function render() {

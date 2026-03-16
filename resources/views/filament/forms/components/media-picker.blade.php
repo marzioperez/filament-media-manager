@@ -12,7 +12,12 @@
     if ($returnType === 'url' && is_string($raw) && filter_var($raw, FILTER_VALIDATE_URL)) {
         $url = $raw;
         // Intentar encontrar el ID a partir de la URL para el preview
-        $media = Media::where(function($q) use ($raw) {
+        // Soporta URLs originales y de conversión (e.g. /media-manager/{id}/conversions/...)
+        $mediaId = null;
+        if (preg_match('#/(\d+)/(conversions/)?[^/]+$#', $raw, $matches)) {
+            $mediaId = (int) $matches[1];
+        }
+        $media = $mediaId ? Media::find($mediaId) : Media::where(function($q) use ($raw) {
             $q->whereRaw("CONCAT(disk, '/', id, '/', file_name) LIKE ?", ['%' . basename($raw) . '%']);
         })->first();
         $id = $media ? $media->id : null;

@@ -461,6 +461,93 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+/* ========================================
+   GALLERY SELECTED STRIP
+   ======================================== */
+
+.media-gallery-selected-strip {
+    border: 1px solid rgba(var(--primary-200), 1);
+    background: rgba(var(--primary-50), 0.5);
+    border-radius: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+:is(.dark) .media-gallery-selected-strip {
+    border-color: rgba(var(--primary-500), 0.25);
+    background: rgba(var(--primary-500), 0.06);
+}
+
+.media-gallery-selected-strip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.media-gallery-selected-strip-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.media-gallery-selected-strip-item {
+    position: relative;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    border: 1.5px solid rgba(var(--primary-300), 1);
+    flex-shrink: 0;
+    transition: border-color 0.15s ease;
+}
+
+:is(.dark) .media-gallery-selected-strip-item {
+    border-color: rgba(var(--primary-400), 0.5);
+}
+
+.media-gallery-selected-strip-item:hover {
+    border-color: rgb(var(--primary-500));
+}
+
+.media-gallery-selected-strip-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-gallery-selected-strip-file {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--gray-100), 1);
+}
+
+:is(.dark) .media-gallery-selected-strip-file {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.media-gallery-selected-strip-remove {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+}
+
+.media-gallery-selected-strip-item:hover .media-gallery-selected-strip-remove,
+.group:hover .media-gallery-selected-strip-remove {
+    opacity: 1;
+}
+
 /* Buttons spacing */
 .media-picker-buttons {
     display: flex;

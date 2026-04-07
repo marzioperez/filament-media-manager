@@ -548,6 +548,38 @@
     opacity: 1;
 }
 
+/* ========================================
+   GALLERY PREVIEW GRID (form field)
+   ======================================== */
+
+.media-gallery-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (max-width: 1024px) {
+    .media-gallery-preview-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .media-gallery-preview-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .media-gallery-preview-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 /* Buttons spacing */
 .media-picker-buttons {
     display: flex;

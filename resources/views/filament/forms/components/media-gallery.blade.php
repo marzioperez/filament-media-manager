@@ -72,7 +72,7 @@
                 </div>
             </template>
             <template x-if="value && value.length > 0">
-                <ul class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 w-full">
+                <ul class="media-gallery-preview-grid">
                     <template x-for="(row, i) in value" :key="row._k">
                         <li class="relative group" draggable="true" @dragstart="startDrag(i)" @dragover.prevent @drop="drop(i)">
                             <div class="aspect-square rounded-lg border border-gray-200/60 dark:border-white/10 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-gray-900 cursor-grab active:cursor-grabbing">
@@ -117,7 +117,12 @@
     </x-filament::input.wrapper>
 
     <div class="media-picker-buttons">
-        <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })">
+        <x-filament::button size="sm" x-on:click="
+            $dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' });
+            setTimeout(() => {
+                Livewire.dispatch('load-gallery-selection', { ids: (value || []).map(r => Number(r?.media_id)).filter(Boolean) });
+            }, 350);
+        ">
             Seleccionar recursos
         </x-filament::button>
 

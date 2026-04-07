@@ -6,6 +6,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Marzio\MediaManager\Models\MediaVault;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -36,6 +37,11 @@ class MediaGalleryPickerGrid extends Component {
 
     public function clearSelection(): void {
         $this->selected = [];
+    }
+
+    #[On('load-gallery-selection')]
+    public function loadSelection(array $ids): void {
+        $this->selected = array_map('intval', array_filter($ids));
     }
 
     public function reorderSelected(int $from, int $to): void {

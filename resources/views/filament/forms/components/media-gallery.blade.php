@@ -26,10 +26,10 @@
             return this.ensureKeys(rows);
         },
 
-        add(ids) {
-            const current = this.toRows(this.value);
-            const toAdd = (ids ?? []).map(id => ({ media_id: Number(id), _k: this.uid() }));
-            this.value = this.ensureKeys(current.concat(toAdd));
+        setSelection(ids) {
+            this.value = this.ensureKeys(
+                (ids ?? []).map(id => ({ media_id: Number(id), _k: this.uid() }))
+            );
         },
 
         dragIndex: null,
@@ -59,7 +59,7 @@
         }
     }"
     x-init="value = ensureKeys(toRows(value))"
-    @media-gallery-picked.window="add($event.detail.ids); $dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+    @media-gallery-picked.window="setSelection($event.detail.ids); $dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
     @close-gallery-picker.window="$dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
     class="fi-fo-field space-y-3"
 >

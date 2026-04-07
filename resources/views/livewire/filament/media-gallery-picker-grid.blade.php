@@ -17,17 +17,32 @@
         @endif
     </div>
 
-    {{-- Tira de items seleccionados --}}
+    {{-- Tira de items seleccionados con drag & drop --}}
     @if($selectedMedia->isNotEmpty())
-        <div class="media-gallery-selected-strip">
+        <div class="media-gallery-selected-strip"
+             x-data="{ stripDragIndex: null }"
+        >
             <div class="media-gallery-selected-strip-header">
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
                     {{ count($selected) }} {{ count($selected) === 1 ? 'seleccionado' : 'seleccionados' }}
+                    <span class="text-gray-400 dark:text-gray-500 font-normal">· arrastra para reordenar</span>
                 </span>
             </div>
             <div class="media-gallery-selected-strip-items">
-                @foreach($selectedMedia as $sm)
-                    <div class="media-gallery-selected-strip-item group" wire:key="sel-strip-{{ $sm->id }}">
+                @foreach($selectedMedia as $idx => $sm)
+                    <div class="media-gallery-selected-strip-item group"
+                         wire:key="sel-strip-{{ $sm->id }}"
+                         draggable="true"
+                         @dragstart="stripDragIndex = {{ $idx }}"
+                         @dragover.prevent
+                         @drop.prevent="
+                            if (stripDragIndex !== null && stripDragIndex !== {{ $idx }}) {
+                                $wire.reorderSelected(stripDragIndex, {{ $idx }});
+                            }
+                            stripDragIndex = null;
+                         "
+                         style="cursor: grab;"
+                    >
                         @if($sm->is_image && $sm->thumb)
                             <img src="{{ $sm->thumb }}" alt="{{ $sm->file_name }}" class="media-gallery-selected-strip-img" />
                         @else

@@ -38,6 +38,13 @@ class MediaGalleryPickerGrid extends Component {
         $this->selected = [];
     }
 
+    public function reorderSelected(int $from, int $to): void {
+        if ($from === $to) return;
+        $item = array_splice($this->selected, $from, 1);
+        array_splice($this->selected, $to, 0, $item);
+        $this->selected = array_values($this->selected);
+    }
+
     public function confirm(): void {
         $this->dispatch('media-gallery-picked', ids: $this->selected);
         $this->selected = [];
@@ -138,11 +145,6 @@ class MediaGalleryPickerGrid extends Component {
                   ->orWhere('name', 'like', $s)
                   ->orWhere('mime_type', 'like', $s);
             });
-        }
-
-        // Ordenar: seleccionados primero, luego los más recientes
-        if (!empty($this->selected)) {
-            $query->orderByRaw('FIELD(id, ' . implode(',', array_map('intval', $this->selected)) . ') DESC');
         }
 
         return $query->latest('id')->paginate($this->perPage);

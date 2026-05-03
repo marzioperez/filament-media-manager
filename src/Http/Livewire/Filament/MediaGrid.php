@@ -3,7 +3,7 @@
 namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Livewire\Attributes\On;
-use Marzio\MediaManager\Models\MediaVault;
+use Marzio\MediaManager\Vault\VaultResolver;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -32,8 +32,8 @@ class MediaGrid extends Component {
 
     public function getItemsProperty() {
         return Media::query()
-            ->where('model_type', MediaVault::class)
-            ->where('model_id', 1)
+            ->where('model_type', VaultResolver::modelType())
+            ->where('model_id', VaultResolver::modelId())
             ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
             ->when($this->search, fn($q) => $q->where(function($qq){
                 $s = "%".$this->search."%";

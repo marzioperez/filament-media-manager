@@ -5,7 +5,7 @@ namespace Marzio\MediaManager\Http\Livewire\Filament;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Marzio\MediaManager\Models\MediaVault;
+use Marzio\MediaManager\Vault\VaultResolver;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -46,7 +46,7 @@ class MediaGalleryPickerGrid extends Component {
     public function updatedPickerFiles(): void {
         $this->isUploading = true;
 
-        $vault = MediaVault::firstOrCreate(['id' => 1]);
+        $vault = VaultResolver::model();
         $disk = 'private';
         $dir = 'tmp-media';
 
@@ -72,7 +72,7 @@ class MediaGalleryPickerGrid extends Component {
                 ->addMediaFromDisk($relative, $disk)
                 ->usingFileName($candidate)
                 ->usingName(pathinfo($candidate, PATHINFO_FILENAME))
-                ->toMediaCollection('assets', 'media-manager');
+                ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
 
             Storage::disk($disk)->delete($relative);
         }
@@ -127,8 +127,8 @@ class MediaGalleryPickerGrid extends Component {
 
     public function getItemsProperty() {
         $query = Media::query()
-            ->where('model_type', MediaVault::class)
-            ->where('model_id', 1);
+            ->where('model_type', VaultResolver::modelType())
+            ->where('model_id', VaultResolver::modelId());
 
         // Aplicar búsqueda
         if ($this->search) {

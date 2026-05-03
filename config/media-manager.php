@@ -76,4 +76,29 @@ return [
 
     'queued_conversions' => true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Vault (contenedor de medias) — opcional
+    |--------------------------------------------------------------------------
+    |
+    | Por defecto el paquete usa MediaVault singleton (id = 1) como modelo
+    | que "posee" todas las medias — diseñado para proyectos single-tenant.
+    |
+    | Para multi-tenant, define un resolver: callable que devuelva el Model
+    | (que implemente HasMedia) que actuará como vault para el contexto
+    | actual. Si devuelve null o un objeto inválido, el paquete cae al
+    | MediaVault default — nunca se rompe.
+    |
+    | Ejemplo (Filament tenancy):
+    |
+    |   'vault' => [
+    |       'resolver' => fn () => \Filament\Facades\Filament::getTenant(),
+    |   ],
+    |
+    */
+
+    'vault' => [
+        'resolver' => null,
+    ],
+
 ];

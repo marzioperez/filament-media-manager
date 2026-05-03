@@ -2,10 +2,11 @@
 
 namespace Marzio\MediaManager\Filament\Pages;
 
-use Marzio\MediaManager\Models\MediaVault;
+use Marzio\MediaManager\Vault\VaultResolver;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaManager extends Page {
@@ -16,29 +17,31 @@ class MediaManager extends Page {
     protected string $view = 'media-manager::filament.pages.media-manager';
     protected static ?int $navigationSort = 20;
 
-    #[\App\Filament\Pages\Url(as: 'q', history: true)]
+    #[Url(as: 'q', history: true)]
     public string $search = '';
 
-    #[\App\Filament\Pages\Url(as: 'sort', history: true)]
+    #[Url(as: 'sort', history: true)]
     public string $sort = 'latest';
 
     public ?int $currentFolderId = null;
 
     public function mount(): void {
-        MediaVault::firstOrCreate(['id' => 1]);
+        // Asegura que el vault exista (crea MediaVault id=1 si aún no
+        // hay resolver custom; si lo hay, normalmente el modelo ya existe).
+        VaultResolver::model();
     }
 
     public function getMediaQueryProperty() {
         return Media::query()
-            ->where('model_type', MediaVault::class)
-            ->where('model_id', 1)
+            ->where('model_type', VaultResolver::modelType())
+            ->where('model_id', VaultResolver::modelId())
             ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
             ->latest();
     }
 
     #[On('upload-finished')]
     public function saveUploads(array $uploads): void {
-        $vault = MediaVault::findOrFail(1);
+        $vault = VaultResolver::model();
 
         foreach ($uploads as $item) {
             $original = $item['original'] ?? basename($item['path']);
@@ -47,7 +50,7 @@ class MediaManager extends Page {
                 ->addMediaFromDisk($item['path'], $item['disk'])
                 ->usingFileName($original)                           // nombre exacto del archivo en S3
                 ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
-                ->toMediaCollection('assets', 'media-manager');
+                ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
 
             // $media->media_folder_id = $this->currentFolderId;
             $media->save();

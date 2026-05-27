@@ -8,16 +8,13 @@
     $id = null;
     $url = null;
 
-    // Si returnType es 'url' y el estado es una URL string
     if ($returnType === 'url' && is_string($raw) && filter_var($raw, FILTER_VALIDATE_URL)) {
         $url = $raw;
-        // Intentar encontrar el ID a partir de la URL para el preview
-        $media = Media::where(function($q) use ($raw) {
+        $media = Media::where(function ($q) use ($raw) {
             $q->whereRaw("CONCAT(disk, '/', id, '/', file_name) LIKE ?", ['%' . basename($raw) . '%']);
         })->first();
         $id = $media ? $media->id : null;
     } else {
-        // Modo ID o necesitamos extraer el ID
         if (is_numeric($raw)) {
             $id = (int) $raw;
         } elseif (is_array($raw)) {
@@ -29,18 +26,21 @@
 
     $media = $id ? Media::find($id) : null;
 
-    // Si no tenemos URL pero tenemos media, obtenerla
     if (!$url && $media) {
         try {
-            // Usar webp o la imagen original, NO usar thumb porque está recortada
             $url = $media->hasGeneratedConversion('webp') ? $media->getUrl('webp') : $media->getUrl();
         } catch (\Throwable $e) {
             $url = null;
         }
     }
+
+    $fileName = $media?->file_name;
+    $mimeType = $media?->mime_type;
+    $sizeHuman = $media ? \Illuminate\Support\Number::fileSize($media->size) : null;
+    $hasSelection = (bool) ($id || $url);
 @endphp
 
-<div class="fi-fo-field"
+<div class="fi-fo-field-wrp"
      x-on:close-picker.window="$dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
      x-on:set-media-single.window="
         if ($event.detail.hostId === '{{ $getLivewire()->getId() }}' && $event.detail.statePath === '{{ $getStatePath() }}') {
@@ -49,35 +49,93 @@
         }
      ">
     @if (isset($label))
-        <div>
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $label }}</label>
+        <div class="media-picker-label">
+            <label class="fi-fo-field-lbl text-sm font-medium leading-6 text-gray-950 dark:text-white">
+                {{ $label }}
+            </label>
         </div>
     @endif
 
-    <x-filament::input.wrapper>
-        <div class="media-picker-preview fi-input border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 flex items-center justify-center"
-             wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}">
-            @if ($url)
-                <img
-                    src="{{ $url }}"
-                    alt="{{ $media ? $media->file_name : 'Preview' }}"
-                    class="h-32 w-32 object-cover rounded-lg border border-gray-200/60 dark:border-white/10 shadow-sm"
-                />
-            @else
-                <div class="media-picker-empty-state bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                    Sin selección
+    <div class="media-picker-card @if($hasSelection) media-picker-card--filled @else media-picker-card--empty @endif"
+         wire:key="preview-{{ $getId() }}-{{ $id ?? 'empty' }}"
+         @if(!$hasSelection) role="button" tabindex="0"
+            x-on:click="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
+            x-on:keydown.enter.prevent="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
+            x-on:keydown.space.prevent="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
+         @endif
+    >
+        @if ($url)
+            <div class="media-picker-thumb">
+                @if ($mimeType && str_starts_with($mimeType, 'image/'))
+                    <img src="{{ $url }}" alt="{{ $fileName ?? 'Preview' }}" loading="lazy" />
+                @else
+                    <div class="media-picker-thumb-fallback">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                @endif
+            </div>
+
+            <div class="media-picker-meta">
+                <div class="media-picker-meta-name" title="{{ $fileName }}">
+                    {{ $fileName ?? 'Recurso seleccionado' }}
                 </div>
-            @endif
-        </div>
-    </x-filament::input.wrapper>
+                <div class="media-picker-meta-sub">
+                    @if($mimeType)
+                        <span class="media-picker-badge">{{ $mimeType }}</span>
+                    @endif
+                    @if($sizeHuman)
+                        <span>{{ $sizeHuman }}</span>
+                    @endif
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="media-picker-clear"
+                title="Quitar selección"
+                wire:click="$set('{{ $getStatePath() }}', null);"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        @else
+            <div class="media-picker-empty">
+                <div class="media-picker-empty-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                </div>
+                <div class="media-picker-empty-text">
+                    <strong>Seleccionar recurso</strong>
+                    <span>Haz clic para elegir una imagen de la biblioteca</span>
+                </div>
+            </div>
+        @endif
+    </div>
 
     <div class="media-picker-buttons">
-        <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })">
-            Seleccionar recurso
+        <x-filament::button
+            size="sm"
+            icon="heroicon-m-photo"
+            x-on:click="$dispatch('open-modal', { id: 'media-picker-modal-{{ $getId() }}' })"
+        >
+            {{ $hasSelection ? 'Cambiar' : 'Seleccionar' }}
         </x-filament::button>
 
-        @if ($id || $url)
-            <x-filament::button size="sm" color="gray" wire:click="$set('{{ $getStatePath() }}', null);">
+        @if ($hasSelection)
+            <x-filament::button
+                size="sm"
+                color="gray"
+                icon="heroicon-m-x-mark"
+                wire:click="$set('{{ $getStatePath() }}', null);"
+            >
                 Limpiar
             </x-filament::button>
         @endif

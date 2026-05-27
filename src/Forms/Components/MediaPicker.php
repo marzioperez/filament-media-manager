@@ -22,7 +22,16 @@ class MediaPicker extends Field {
         //$this->rules(['nullable', 'integer']);
 
         $this->dehydrateStateUsing(function ($state) {
-            // Normalizar a ID primero
+            if ($state === null || $state === '') {
+                return null;
+            }
+
+            // En modo URL, si el estado ya es una URL string (recarga del form sin
+            // tocar el picker), preservarla tal cual para no sobreescribirla con null.
+            if ($this->returnType === 'url' && is_string($state) && !is_numeric($state)) {
+                return $state;
+            }
+
             $id = null;
             if (is_numeric($state)) {
                 $id = (int) $state;
@@ -36,12 +45,10 @@ class MediaPicker extends Field {
                 return null;
             }
 
-            // Si returnType es 'url', convertir ID a URL
             if ($this->returnType === 'url') {
                 return $this->getUrlFromState($id);
             }
 
-            // Modo ID (default): devolver el ID
             return $id;
         });
     }

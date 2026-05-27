@@ -48,6 +48,9 @@
             this.value = rows;
         },
         isPdf(row){ return (row?.mime ?? '').startsWith('application/pdf') },
+        labelFor(row){
+            return row?.name ?? row?.file_name ?? ('Recurso #' + (row?.media_id ?? ''));
+        },
         clearAll() {
             this.value = [];
         }
@@ -55,26 +58,109 @@
     x-init="value = ensureKeys(toRows(value))"
     @media-gallery-picked.window="add($event.detail.ids); $dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
     @close-gallery-picker.window="$dispatch('close-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
-    class="space-y-3"
+    class="media-gallery-field space-y-3"
 >
-    <div class="flex gap-2">
-        <x-filament::button size="sm" x-on:click="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })">Seleccionar recursos</x-filament::button>
-        <x-filament::button size="sm" color="gray" x-show="value.length" x-on:click="clearAll()">Limpiar</x-filament::button>
+    <div class="media-gallery-toolbar">
+        <div class="media-gallery-toolbar-info">
+            <span class="media-gallery-toolbar-count" x-text="(Array.isArray(value) ? value.length : 0) + ' recurso' + ((Array.isArray(value) && value.length === 1) ? '' : 's')"></span>
+        </div>
+        <div class="flex gap-2">
+            <x-filament::button
+                size="sm"
+                icon="heroicon-m-plus"
+                x-on:click="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+            >
+                <span x-text="(Array.isArray(value) && value.length > 0) ? 'Agregar más' : 'Seleccionar recursos'"></span>
+            </x-filament::button>
+            <x-filament::button
+                size="sm"
+                color="gray"
+                icon="heroicon-m-x-mark"
+                x-show="Array.isArray(value) && value.length > 0"
+                x-on:click="clearAll()"
+            >
+                Limpiar
+            </x-filament::button>
+        </div>
     </div>
 
-    <div>
-        <ul class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+    <template x-if="!Array.isArray(value) || value.length === 0">
+        <div
+            class="media-gallery-empty"
+            role="button"
+            tabindex="0"
+            x-on:click="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+            x-on:keydown.enter.prevent="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+            x-on:keydown.space.prevent="$dispatch('open-modal', { id: 'media-gallery-modal-{{ $getId() }}' })"
+        >
+            <div class="media-picker-empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+            </div>
+            <div class="media-picker-empty-text">
+                <strong>Seleccionar recursos</strong>
+                <span>Haz clic para elegir uno o varios archivos de la biblioteca</span>
+            </div>
+        </div>
+    </template>
+
+    <div x-show="Array.isArray(value) && value.length > 0">
+        <ul class="media-gallery-grid">
             <template x-for="(row, i) in value" :key="row._k">
-                <li class="relative group" draggable="true" @dragstart="startDrag(i)" @dragover.prevent @drop="drop(i)">
-                    <div class="aspect-square rounded border border-gray-200/60 dark:border-white/10 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                <li class="media-gallery-item"
+                    draggable="true"
+                    @dragstart="startDrag(i)"
+                    @dragover.prevent
+                    @drop="drop(i)"
+                    :class="{ 'media-gallery-item--dragging': dragIndex === i }"
+                >
+                    <div class="media-gallery-thumb">
                         <template x-if="isPdf(row)">
-                            <div class="text-xs text-gray-600 dark:text-gray-300">PDF #<span x-text="row.media_id"></span></div>
+                            <div class="media-gallery-thumb-fallback">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                <span>PDF</span>
+                            </div>
                         </template>
-                        <template x-if="!isPdf(row)">
-                            <img :src="row?.url" alt="" class="w-full h-full object-cover" />
+                        <template x-if="!isPdf(row) && row?.url">
+                            <img :src="row.url" :alt="labelFor(row)" loading="lazy" />
+                        </template>
+                        <template x-if="!isPdf(row) && !row?.url">
+                            <div class="media-gallery-thumb-fallback">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span x-text="'#' + (row?.media_id ?? '')"></span>
+                            </div>
                         </template>
                     </div>
-                    <button type="button" title="Eliminar" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/90 dark:bg-gray-900/90 border border-gray-200/60 dark:border-white/10" @click.prevent="removeAt(i)">✕</button>
+                    <div class="media-gallery-item-caption" :title="labelFor(row)" x-text="labelFor(row)"></div>
+
+                    <span class="media-gallery-drag-handle" title="Arrastrar para reordenar" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/>
+                            <circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+                        </svg>
+                    </span>
+
+                    <button
+                        type="button"
+                        title="Quitar"
+                        class="media-gallery-remove"
+                        @click.prevent="removeAt(i)"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </li>
             </template>
         </ul>

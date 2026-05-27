@@ -38,6 +38,23 @@
     $mimeType = $media?->mime_type;
     $sizeHuman = $media ? \Illuminate\Support\Number::fileSize($media->size) : null;
     $hasSelection = (bool) ($id || $url);
+
+    // Detectar si el recurso es imagen. Preferir el mime de DB; si no hay
+    // (p.ej. recarga del form con solo la URL en URL mode), inferir por
+    // la extensión del URL.
+    $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'avif', 'ico'];
+    if ($mimeType) {
+        $isImageType = str_starts_with($mimeType, 'image/');
+    } elseif ($url) {
+        $urlPath = parse_url($url, PHP_URL_PATH) ?: '';
+        $urlExt = strtolower(pathinfo($urlPath, PATHINFO_EXTENSION));
+        $isImageType = in_array($urlExt, $imageExts, true);
+    } else {
+        $isImageType = false;
+    }
+
+    // Nombre mostrable: usar el del media si existe, si no el basename del URL.
+    $displayName = $fileName ?? ($url ? basename(parse_url($url, PHP_URL_PATH) ?: $url) : 'Recurso seleccionado');
 @endphp
 
 <div class="fi-fo-field-wrp"
@@ -65,11 +82,11 @@
          @endif
     >
         @if ($url)
-            <div class="media-picker-thumb">
-                @if ($mimeType && str_starts_with($mimeType, 'image/'))
-                    <img src="{{ $url }}" alt="{{ $fileName ?? 'Preview' }}" loading="lazy" />
+            <div class="mp-field-thumb">
+                @if ($isImageType)
+                    <img src="{{ $url }}" alt="{{ $displayName }}" loading="lazy" />
                 @else
-                    <div class="media-picker-thumb-fallback">
+                    <div class="mp-field-thumb-fallback">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
@@ -79,8 +96,8 @@
             </div>
 
             <div class="media-picker-meta">
-                <div class="media-picker-meta-name" title="{{ $fileName }}">
-                    {{ $fileName ?? 'Recurso seleccionado' }}
+                <div class="media-picker-meta-name" title="{{ $displayName }}">
+                    {{ $displayName }}
                 </div>
                 <div class="media-picker-meta-sub">
                     @if($mimeType)

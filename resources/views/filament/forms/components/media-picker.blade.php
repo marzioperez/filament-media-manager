@@ -2,8 +2,8 @@
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
     $raw = $getState();
-    $returnType = $returnType ?? 'id';
-    $conversionName = $conversionName ?? 'webp';
+    $returnType = $getReturnType();
+    $conversionName = $getConversionName();
 
     $id = null;
     $url = null;

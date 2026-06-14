@@ -91,9 +91,18 @@ class MediaPicker extends Field {
         return $this;
     }
 
+    // Expuestos como métodos públicos para que estén disponibles en la vista en
+    // Filament 3 (extractPublicMethods) — en Filament 3 NO se invoca getViewData().
+    public function getReturnType(): string {
+        return $this->returnType;
+    }
+
+    public function getConversionName(): string {
+        return $this->conversionName;
+    }
+
     public function getViewData(): array {
         return array_merge(parent::getViewData(), [
-            'label' => $this->getLabel(),
             'returnType' => $this->returnType,
             'conversionName' => $this->conversionName,
         ]);

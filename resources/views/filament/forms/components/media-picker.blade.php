@@ -8,10 +8,13 @@
     $id = null;
     $url = null;
 
-    if ($returnType === 'url' && is_string($raw) && filter_var($raw, FILTER_VALIDATE_URL)) {
+    // En modo URL el estado guardado ES una URL: tratamos cualquier string no
+    // vacío (y no puramente numérico) como URL. No usamos FILTER_VALIDATE_URL
+    // porque rechaza URLs válidas con espacios/acentos en el nombre de archivo.
+    if ($returnType === 'url' && is_string($raw) && trim($raw) !== '' && ! is_numeric($raw)) {
         $url = $raw;
         $media = Media::where(function ($q) use ($raw) {
-            $q->whereRaw("CONCAT(disk, '/', id, '/', file_name) LIKE ?", ['%' . basename($raw) . '%']);
+            $q->whereRaw("CONCAT(disk, '/', id, '/', file_name) LIKE ?", ['%' . basename(parse_url($raw, PHP_URL_PATH) ?: $raw) . '%']);
         })->first();
         $id = $media ? $media->id : null;
     } else {

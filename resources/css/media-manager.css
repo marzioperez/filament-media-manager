@@ -390,6 +390,28 @@
     padding: 1rem 0;
 }
 
+/* Grilla principal del Gestor de Medios.
+   Definida con CSS grid explícito para no depender de las utilidades
+   `fi-grid`/`--cols-*` (que solo existen en Filament 4). Así se ve en
+   4 columnas tanto en Filament 3 como 4. */
+.media-manager-main-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .media-manager-main-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .media-manager-main-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
 .media-manager-grid-item {
     position: relative;
     overflow: hidden;

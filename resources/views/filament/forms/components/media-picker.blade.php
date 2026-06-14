@@ -65,10 +65,10 @@
             $dispatch('close-modal', { id: 'media-picker-modal-{{ $getId() }}' });
         }
      ">
-    @if (isset($label))
+    @if (filled($getLabel()))
         <div class="media-picker-label">
             <label class="fi-fo-field-lbl text-sm font-medium leading-6 text-gray-950 dark:text-white">
-                {{ $label }}
+                {{ $getLabel() }}
             </label>
         </div>
     @endif

@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
     public function up(): void {
+        if (Schema::hasTable('media_folders')) {
+            return;
+        }
+
         Schema::create('media_folders', function (Blueprint $table) {
             $table->id();
 
@@ -28,13 +32,13 @@ return new class extends Migration {
                 ->nullOnDelete();
 
             // Vault propietario (soporte multi-tenant, igual que Spatie media).
+            // nullableMorphs() ya crea el índice (model_type, model_id).
             $table->nullableMorphs('model');
 
             $table->timestamps();
 
             // Evita nombres duplicados dentro de la misma carpeta y vault.
             $table->unique(['parent_id', 'slug', 'model_type', 'model_id'], 'media_folders_unique_slug');
-            $table->index(['model_type', 'model_id']);
         });
     }
 

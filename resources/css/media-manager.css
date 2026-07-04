@@ -1,6 +1,35 @@
 /* Media Manager Styles */
 
 /* ========================================
+   MEDIA MANAGER - Grid header (título + buscador)
+   ======================================== */
+
+.mm-grid-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.mm-grid-search {
+    flex: 0 1 20rem;
+    min-width: 12rem;
+    font-weight: 400;
+}
+
+.mm-grid-empty {
+    font-size: 0.8125rem;
+    color: rgb(107 114 128);
+    padding: 0.5rem 0 0.25rem;
+}
+
+:is(.dark) .mm-grid-empty {
+    color: rgb(156 163 175);
+}
+
+/* ========================================
    MEDIA MANAGER - Folders (carpetas)
    ======================================== */
 

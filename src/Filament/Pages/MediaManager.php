@@ -2,12 +2,13 @@
 
 namespace Marzio\MediaManager\Filament\Pages;
 
+use Marzio\MediaManager\Models\MediaFolder;
 use Marzio\MediaManager\Support\UploadContext;
 use Marzio\MediaManager\Vault\VaultResolver;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Url;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaManager extends Page {
@@ -18,12 +19,6 @@ class MediaManager extends Page {
     protected string $view = 'media-manager::filament.pages.media-manager';
     protected static ?int $navigationSort = 20;
 
-    #[Url(as: 'q', history: true)]
-    public string $search = '';
-
-    #[Url(as: 'sort', history: true)]
-    public string $sort = 'latest';
-
     public ?int $currentFolderId = null;
 
     public function mount(): void {
@@ -32,17 +27,35 @@ class MediaManager extends Page {
         VaultResolver::model();
     }
 
-    public function getMediaQueryProperty() {
-        return Media::query()
-            ->where('model_type', VaultResolver::modelType())
-            ->where('model_id', VaultResolver::modelId())
-            ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
-            ->latest();
+    /**
+     * Botón "Cargar recursos" junto al título de la página. Abre un modal con
+     * el uploader masivo.
+     */
+    protected function getHeaderActions(): array {
+        return [
+            Action::make('upload')
+                ->label('Cargar recursos')
+                ->icon('heroicon-m-arrow-up-tray')
+                ->color('primary')
+                ->modalHeading('Cargar recursos')
+                ->modalDescription(fn () => $this->currentFolderId
+                    ? 'Los archivos se subirán a la carpeta actual.'
+                    : 'Los archivos se subirán a la raíz.')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Cerrar')
+                ->modalContent(fn () => view('media-manager::filament.pages.partials.uploader-modal', [
+                    'currentFolderId' => $this->currentFolderId,
+                ])),
+        ];
     }
 
     #[On('upload-finished')]
     public function saveUploads(array $uploads): void {
-        $vault = VaultResolver::model();
+        $vault     = VaultResolver::model();
+        $mediaDisk = config('media-manager.disk', 'media-manager');
+
+        $folder = $this->currentFolderId ? MediaFolder::find($this->currentFolderId) : null;
+        $dir    = $folder ? trim($folder->path, '/') : '';
 
         // Comunica la carpeta destino al PathGenerator, de modo que el fichero
         // se copie directamente dentro del prefijo de la carpeta en S3.
@@ -52,11 +65,17 @@ class MediaManager extends Page {
             foreach ($uploads as $item) {
                 $original = $item['original'] ?? basename($item['path']);
 
+                // Dentro de una carpeta los ficheros conviven sin subcarpeta
+                // numérica, así que garantizamos un nombre único en esa carpeta.
+                if ($folder) {
+                    $original = $this->uniqueFileName($mediaDisk, $dir, $original);
+                }
+
                 $media = $vault
                     ->addMediaFromDisk($item['path'], $item['disk'])
                     ->usingFileName($original)                           // nombre exacto del archivo en S3
                     ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
-                    ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
+                    ->toMediaCollection(config('media-manager.collection', 'assets'), $mediaDisk);
 
                 // Persiste la carpeta a la que pertenece el media (para el filtrado
                 // del grid y para que las conversiones en cola usen la misma ruta).
@@ -70,12 +89,38 @@ class MediaManager extends Page {
         }
 
         $this->dispatch('refresh-media-grid');
+
+        // Cierra el modal del uploader (si está montado como header action).
+        if (method_exists($this, 'unmountAction')) {
+            $this->unmountAction();
+        }
     }
 
     #[On('set-folder')]
     public function setFolder(?int $id = null): void {
         $this->currentFolderId = $id;
         $this->dispatch('folder-changed');
+    }
+
+    /**
+     * Devuelve un nombre de fichero único dentro de un directorio del disco,
+     * añadiendo un sufijo "-1", "-2"… si ya existe.
+     */
+    protected function uniqueFileName(string $disk, string $dir, string $fileName): string {
+        $base   = pathinfo($fileName, PATHINFO_FILENAME);
+        $ext    = pathinfo($fileName, PATHINFO_EXTENSION);
+        $suffix = $ext !== '' ? '.' . $ext : '';
+        $prefix = $dir !== '' ? rtrim($dir, '/') . '/' : '';
+
+        $candidate = $base . $suffix;
+        $i = 0;
+
+        while (Storage::disk($disk)->exists($prefix . $candidate)) {
+            $i++;
+            $candidate = $base . '-' . $i . $suffix;
+        }
+
+        return $candidate;
     }
 
 }

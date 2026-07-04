@@ -3,6 +3,7 @@
 namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,7 +13,9 @@ class MediaGrid extends Component {
 
     use WithPagination;
 
+    #[Url(as: 'q', history: true)]
     public string $search = '';
+
     public string $sort   = 'latest';
     public ?int $currentFolderId = null;
     public array $selected = [];

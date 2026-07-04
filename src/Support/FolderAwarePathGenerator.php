@@ -10,15 +10,21 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
  * PathGenerator que coloca los ficheros dentro del prefijo físico de su
  * carpeta en el disco (S3).
  *
- * Estructura resultante:
+ * Estructura resultante para un media DENTRO de una carpeta (sin subcarpeta
+ * numérica por media, los ficheros van directamente en la carpeta):
  *
- *     {ruta-de-la-carpeta}/{media_id}/archivo.ext
- *     {ruta-de-la-carpeta}/{media_id}/conversions/...
- *     {ruta-de-la-carpeta}/{media_id}/responsive-images/...
+ *     {ruta-de-la-carpeta}/archivo.ext
+ *     {ruta-de-la-carpeta}/conversions/...
+ *     {ruta-de-la-carpeta}/responsive-images/...
  *
- * Si el media no pertenece a ninguna carpeta, se comporta EXACTAMENTE igual
- * que el generador por defecto de Spatie ("{media_id}/"), de modo que no
- * altera el resto de medios del proyecto anfitrión.
+ * Esto es seguro porque el FileRemover de Spatie borra por nombre de fichero
+ * dentro del directorio (no elimina el directorio salvo que quede vacío), de
+ * modo que varios medios pueden convivir en la misma carpeta. La unicidad de
+ * nombres dentro de la carpeta la garantiza el uploader.
+ *
+ * Si el media NO pertenece a ninguna carpeta (raíz), se comporta EXACTAMENTE
+ * igual que el generador por defecto de Spatie ("{media_id}/"), de modo que no
+ * altera el resto de medios del proyecto anfitrión ni rompe URLs existentes.
  *
  * La carpeta se resuelve primero desde la columna `media_folder_id` del media
  * y, si aún no está persistida (durante la copia inicial del fichero), desde
@@ -42,7 +48,16 @@ class FolderAwarePathGenerator implements PathGenerator {
     }
 
     protected function basePath(Media $media): string {
-        return $this->folderPrefix($media) . $media->getKey() . '/';
+        $prefix = $this->folderPrefix($media);
+
+        // Dentro de una carpeta: los ficheros van directamente en la ruta de la
+        // carpeta, sin subcarpeta numérica por media (p.ej. "iconos/logo.png").
+        if ($prefix !== '') {
+            return $prefix;
+        }
+
+        // En la raíz se mantiene el comportamiento por defecto de Spatie.
+        return $media->getKey() . '/';
     }
 
     protected function folderPrefix(Media $media): string {

@@ -1,7 +1,24 @@
 <div x-data="{ selected: null }" class="fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(12, minmax(0, 1fr)); --cols-2xl: repeat(12, minmax(0, 1fr));">
     <div class="fi-grid-col lg:fi-grid-col-span" x-transition :style="selected ? '--col-span-default: span 1 / span 1; --col-span-lg: span 8 / span 8;' : '--col-span-default: span 1 / span 1; --col-span-lg: span 12 / span 12;'">
-        <x-filament::section heading="Recursos multimedia">
+        <x-filament::section>
+            <x-slot name="heading">
+                <div class="mm-grid-header">
+                    <span>Recursos multimedia</span>
+                    <div class="mm-grid-search">
+                        <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
+                            <x-filament::input
+                                type="text"
+                                placeholder="Buscar recursos..."
+                                wire:model.live.debounce.500ms="search" />
+                        </x-filament::input.wrapper>
+                    </div>
+                </div>
+            </x-slot>
+
             <div class="fi-sc-component">
+                @if($this->search !== '' && $media->isEmpty())
+                    <p class="mm-grid-empty">No se encontraron recursos para «{{ $this->search }}».</p>
+                @endif
                 <div class="space-y-6">
                     <div class="media-manager-main-grid fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(4, minmax(0, 1fr)); --cols-2xl: repeat(4, minmax(0, 1fr));">
                         @foreach($media as $m)

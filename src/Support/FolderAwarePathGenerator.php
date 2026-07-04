@@ -10,25 +10,23 @@ use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
  * PathGenerator que coloca los ficheros dentro del prefijo físico de su
  * carpeta en el disco (S3).
  *
- * Estructura resultante para un media DENTRO de una carpeta (sin subcarpeta
- * numérica por media, los ficheros van directamente en la carpeta):
+ * Los ficheros se guardan directamente en la ruta de su carpeta, SIN una
+ * subcarpeta numérica por media:
  *
- *     {ruta-de-la-carpeta}/archivo.ext
+ *     {ruta-de-la-carpeta}/archivo.ext          (en una carpeta)
+ *     archivo.ext                               (en la raíz)
  *     {ruta-de-la-carpeta}/conversions/...
  *     {ruta-de-la-carpeta}/responsive-images/...
  *
- * Esto es seguro porque el FileRemover de Spatie borra por nombre de fichero
- * dentro del directorio (no elimina el directorio salvo que quede vacío), de
- * modo que varios medios pueden convivir en la misma carpeta. La unicidad de
- * nombres dentro de la carpeta la garantiza el uploader.
- *
- * Si el media NO pertenece a ninguna carpeta (raíz), se comporta EXACTAMENTE
- * igual que el generador por defecto de Spatie ("{media_id}/"), de modo que no
- * altera el resto de medios del proyecto anfitrión ni rompe URLs existentes.
+ * Para que esto sea seguro (varios medios comparten directorio), el paquete
+ * registra también un FileRemover propio (FolderAwareFileRemover) que borra el
+ * fichero original por su ruta EXACTA en lugar de por nombre, evitando que un
+ * fichero homónimo de otra carpeta se elimine por accidente.
  *
  * La carpeta se resuelve primero desde la columna `media_folder_id` del media
  * y, si aún no está persistida (durante la copia inicial del fichero), desde
- * el UploadContext.
+ * el UploadContext. La unicidad de nombres dentro de cada carpeta (y de la
+ * raíz) la garantiza el uploader.
  */
 class FolderAwarePathGenerator implements PathGenerator {
 
@@ -48,16 +46,9 @@ class FolderAwarePathGenerator implements PathGenerator {
     }
 
     protected function basePath(Media $media): string {
-        $prefix = $this->folderPrefix($media);
-
-        // Dentro de una carpeta: los ficheros van directamente en la ruta de la
-        // carpeta, sin subcarpeta numérica por media (p.ej. "iconos/logo.png").
-        if ($prefix !== '') {
-            return $prefix;
-        }
-
-        // En la raíz se mantiene el comportamiento por defecto de Spatie.
-        return $media->getKey() . '/';
+        // Sin subcarpeta numérica por media. En una carpeta devuelve
+        // "ruta/carpeta/"; en la raíz devuelve "" (fichero en la raíz del disco).
+        return $this->folderPrefix($media);
     }
 
     protected function folderPrefix(Media $media): string {

@@ -65,11 +65,9 @@ class MediaManager extends Page {
             foreach ($uploads as $item) {
                 $original = $item['original'] ?? basename($item['path']);
 
-                // Dentro de una carpeta los ficheros conviven sin subcarpeta
-                // numérica, así que garantizamos un nombre único en esa carpeta.
-                if ($folder) {
-                    $original = $this->uniqueFileName($mediaDisk, $dir, $original);
-                }
+                // Los ficheros conviven sin subcarpeta numérica, así que
+                // garantizamos un nombre único dentro de la carpeta (o la raíz).
+                $original = $this->uniqueFileName($mediaDisk, $dir, $original);
 
                 $media = $vault
                     ->addMediaFromDisk($item['path'], $item['disk'])

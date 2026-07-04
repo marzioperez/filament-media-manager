@@ -12,7 +12,9 @@ use Marzio\MediaManager\Http\Livewire\Filament\MediaFolders;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaGalleryPickerGrid;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaGrid;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaPickerGrid;
+use Marzio\MediaManager\Support\FolderAwareFileRemover;
 use Marzio\MediaManager\Support\FolderAwarePathGenerator;
+use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
 use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 
 class MediaManagerServiceProvider extends ServiceProvider {
@@ -90,6 +92,15 @@ class MediaManagerServiceProvider extends ServiceProvider {
 
         if (empty($current) || $current === DefaultPathGenerator::class) {
             config(['media-library.path_generator' => FolderAwarePathGenerator::class]);
+        }
+
+        // FileRemover que borra el original por ruta exacta. Necesario porque,
+        // al no usar subcarpeta por media, varios ficheros comparten directorio.
+        // Solo se activa si el proyecto usa el remover por defecto de Spatie.
+        $currentRemover = config('media-library.file_remover_class');
+
+        if (empty($currentRemover) || $currentRemover === DefaultFileRemover::class) {
+            config(['media-library.file_remover_class' => FolderAwareFileRemover::class]);
         }
     }
 }

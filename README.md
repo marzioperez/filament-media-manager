@@ -141,18 +141,28 @@ anidadas:
 
 - Pulsa **Nueva carpeta** para crearla dentro de la ubicación actual.
 - Navega con los **breadcrumbs** (Inicio › Carpeta › Subcarpeta).
-- Los archivos que subas se guardan **dentro del prefijo de la carpeta** en el
-  disco configurado (p. ej. `documentos/facturas/mi-archivo.pdf` en S3).
-- Al crear una carpeta se materializa **físicamente en el disco** (en S3 se crea
-  el prefijo correspondiente).
+- Los archivos se guardan **directamente en la ruta de su carpeta**, sin
+  subcarpeta numérica por archivo (p. ej. `documentos/facturas/factura.pdf` en
+  S3). Los archivos de la raíz se guardan en la raíz del disco (`factura.pdf`).
+- Las carpetas se materializan **físicamente en el disco al subir el primer
+  archivo** (su clave crea el prefijo). No se crean objetos "placeholder" para
+  evitar carpetas fantasma en S3; la carpeta existe siempre de forma lógica en
+  la base de datos.
+- Los nombres de archivo se **deduplican** dentro de cada carpeta (y de la raíz)
+  añadiendo `-1`, `-2`… si hiciera falta.
 - Al eliminar una carpeta se borran también sus subcarpetas, sus archivos y el
   directorio físico.
 
-> El paquete registra automáticamente un `PathGenerator` propio
-> (`FolderAwarePathGenerator`) que ubica los ficheros dentro de la ruta de su
-> carpeta. Solo se activa si tu proyecto usa el generador por defecto de Spatie;
-> si defines uno propio en `config/media-library.php`, se respeta y no se
-> sobrescribe. Los medios sin carpeta mantienen el comportamiento por defecto.
+> El paquete registra automáticamente, y solo si tu proyecto usa los valores por
+> defecto de Spatie (respetando cualquier personalización tuya en
+> `config/media-library.php`):
+>
+> - un `PathGenerator` (`FolderAwarePathGenerator`) que ubica cada fichero en la
+>   ruta de su carpeta sin subcarpeta numérica;
+> - un `FileRemover` (`FolderAwareFileRemover`) que borra el fichero original por
+>   su **ruta exacta**. Esto es necesario porque, al compartir directorio, el
+>   borrador por defecto de Spatie (que localiza el original por nombre) podría
+>   afectar a un fichero homónimo de otra carpeta.
 
 ### Usar el campo MediaPicker en tus recursos
 
@@ -249,7 +259,8 @@ src/
 │   └── MediaFolder.php               # Modelo de carpeta
 ├── Support/
 │   ├── UploadContext.php             # Contexto de subida (carpeta destino)
-│   └── FolderAwarePathGenerator.php  # Ubica los ficheros en el prefijo de su carpeta
+│   ├── FolderAwarePathGenerator.php  # Ubica los ficheros en el prefijo de su carpeta
+│   └── FolderAwareFileRemover.php    # Borra el original por ruta exacta (borrado seguro)
 └── MediaManagerServiceProvider.php   # Service Provider
 ```
 

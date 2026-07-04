@@ -78,13 +78,11 @@ class MediaFolders extends Component {
             'model_id'   => VaultResolver::modelId(),
         ])->save();
 
-        // Materializar la carpeta en el disco. En S3 esto crea un objeto
-        // "placeholder" con la clave terminada en "/".
-        try {
-            Storage::disk($disk)->makeDirectory($path);
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        // Nota: NO creamos un objeto "placeholder" ("carpeta/") en el disco.
+        // En S3 ese marcador aparece como una subcarpeta fantasma con el mismo
+        // nombre. La carpeta se materializa físicamente en cuanto se sube el
+        // primer archivo (su clave crea el prefijo). La carpeta existe siempre
+        // de forma lógica en la base de datos.
 
         $this->newFolderName = '';
         $this->dispatch('close-modal', id: 'media-manager-create-folder');

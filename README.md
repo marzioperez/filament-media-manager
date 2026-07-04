@@ -5,6 +5,7 @@ Gestor multimedia para Filament PHP que permite cargar, organizar y seleccionar 
 ## Características
 
 - 📁 Página de administración de medios en Filament
+- 🗂️ Carpetas anidadas con creación física en el disco (S3)
 - 🖼️ Campo personalizado para seleccionar imágenes/videos
 - 🎨 Galería de medios
 - ☁️ Integración con Spatie Media Library
@@ -48,7 +49,9 @@ php artisan vendor:publish --tag=media-manager-seeders
 php artisan migrate
 ```
 
-Esto creará la tabla `media_vaults` necesaria para el funcionamiento del paquete.
+Esto creará las tablas `media_vaults` y `media_folders`, y añadirá la columna
+`media_folder_id` a la tabla `media` de Spatie (necesaria para organizar los
+archivos en carpetas).
 
 ### 4. Configurar Spatie Media Library
 
@@ -130,6 +133,26 @@ Desde esta página podrás:
 - Ver todos los recursos multimedia
 - Buscar y filtrar recursos
 - Organizar por carpetas (opcional)
+
+### Carpetas
+
+Desde la página **Gestor de Medios** puedes organizar tus archivos en carpetas
+anidadas:
+
+- Pulsa **Nueva carpeta** para crearla dentro de la ubicación actual.
+- Navega con los **breadcrumbs** (Inicio › Carpeta › Subcarpeta).
+- Los archivos que subas se guardan **dentro del prefijo de la carpeta** en el
+  disco configurado (p. ej. `documentos/facturas/mi-archivo.pdf` en S3).
+- Al crear una carpeta se materializa **físicamente en el disco** (en S3 se crea
+  el prefijo correspondiente).
+- Al eliminar una carpeta se borran también sus subcarpetas, sus archivos y el
+  directorio físico.
+
+> El paquete registra automáticamente un `PathGenerator` propio
+> (`FolderAwarePathGenerator`) que ubica los ficheros dentro de la ruta de su
+> carpeta. Solo se activa si tu proyecto usa el generador por defecto de Spatie;
+> si defines uno propio en `config/media-library.php`, se respeta y no se
+> sobrescribe. Los medios sin carpeta mantienen el comportamiento por defecto.
 
 ### Usar el campo MediaPicker en tus recursos
 
@@ -217,11 +240,16 @@ src/
 │   └── Livewire/
 │       └── Filament/
 │           ├── MediaGrid.php         # Grid de medios en la página principal
+│           ├── MediaFolders.php      # Carpetas: crear/eliminar/navegar
 │           ├── MediaPickerGrid.php   # Grid en el picker modal
 │           ├── MediaGalleryPickerGrid.php
 │           └── MediaBulkUploader.php # Uploader masivo
 ├── Models/
-│   └── MediaVault.php                # Modelo principal
+│   ├── MediaVault.php                # Modelo principal
+│   └── MediaFolder.php               # Modelo de carpeta
+├── Support/
+│   ├── UploadContext.php             # Contexto de subida (carpeta destino)
+│   └── FolderAwarePathGenerator.php  # Ubica los ficheros en el prefijo de su carpeta
 └── MediaManagerServiceProvider.php   # Service Provider
 ```
 

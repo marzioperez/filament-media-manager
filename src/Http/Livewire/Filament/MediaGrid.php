@@ -34,7 +34,8 @@ class MediaGrid extends Component {
         return Media::query()
             ->where('model_type', VaultResolver::modelType())
             ->where('model_id', VaultResolver::modelId())
-            ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
+            // Muestra solo los medios de la carpeta actual (raíz = sin carpeta).
+            ->where('media_folder_id', $this->currentFolderId)
             ->when($this->search, fn($q) => $q->where(function($qq){
                 $s = "%".$this->search."%";
                 $qq->where('file_name','like',$s)->orWhere('mime_type','like',$s);

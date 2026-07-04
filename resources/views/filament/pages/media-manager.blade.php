@@ -18,15 +18,30 @@
                 </div>
             </x-filament::section>
 
+            <livewire:media-manager.media-folders
+                :currentFolderId="$currentFolderId"
+                wire:key="folders-{{ $currentFolderId ?? 'root' }}" />
+
             <template x-if="showUpload">
                 <x-filament::section>
                     <div x-data
                          x-on:dragover.prevent
                          x-on:drop.prevent="$dispatch('trigger-upload-drop', { dt: $event.dataTransfer })">
-                        <p class="text-sm font-medium mb-3">Cargar archivos <span class="text-primary-600">*</span></p>
+                        <p class="text-sm font-medium mb-3">
+                            Cargar archivos <span class="text-primary-600">*</span>
+                            <span class="text-xs text-gray-500" x-cloak>
+                                @if($this->currentFolderId)
+                                    — se subirán a la carpeta actual
+                                @else
+                                    — se subirán a la raíz
+                                @endif
+                            </span>
+                        </p>
 
                         <div class="relative">
-                            <livewire:media-manager.media-bulk-uploader :currentFolderId="$currentFolderId" />
+                            <livewire:media-manager.media-bulk-uploader
+                                :currentFolderId="$currentFolderId"
+                                wire:key="uploader-{{ $currentFolderId ?? 'root' }}" />
                         </div>
                     </div>
                 </x-filament::section>

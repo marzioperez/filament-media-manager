@@ -2,6 +2,7 @@
 
 namespace Marzio\MediaManager\Filament\Pages;
 
+use Marzio\MediaManager\Support\UploadContext;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
@@ -43,19 +44,29 @@ class MediaManager extends Page {
     public function saveUploads(array $uploads): void {
         $vault = VaultResolver::model();
 
-        foreach ($uploads as $item) {
-            $original = $item['original'] ?? basename($item['path']);
+        // Comunica la carpeta destino al PathGenerator, de modo que el fichero
+        // se copie directamente dentro del prefijo de la carpeta en S3.
+        UploadContext::set($this->currentFolderId);
 
-            $media = $vault
-                ->addMediaFromDisk($item['path'], $item['disk'])
-                ->usingFileName($original)                           // nombre exacto del archivo en S3
-                ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
-                ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
+        try {
+            foreach ($uploads as $item) {
+                $original = $item['original'] ?? basename($item['path']);
 
-            // $media->media_folder_id = $this->currentFolderId;
-            $media->save();
+                $media = $vault
+                    ->addMediaFromDisk($item['path'], $item['disk'])
+                    ->usingFileName($original)                           // nombre exacto del archivo en S3
+                    ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
+                    ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
 
-            Storage::disk($item['disk'])->delete($item['path']);
+                // Persiste la carpeta a la que pertenece el media (para el filtrado
+                // del grid y para que las conversiones en cola usen la misma ruta).
+                $media->media_folder_id = $this->currentFolderId;
+                $media->save();
+
+                Storage::disk($item['disk'])->delete($item['path']);
+            }
+        } finally {
+            UploadContext::clear();
         }
 
         $this->dispatch('refresh-media-grid');

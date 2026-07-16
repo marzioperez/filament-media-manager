@@ -8,22 +8,23 @@ Gestor multimedia para Filament PHP que permite cargar, organizar y seleccionar 
 - 🖼️ Campo personalizado para seleccionar imágenes/videos
 - 🎨 Galería de medios
 - ☁️ Integración con Spatie Media Library
-- 🚀 Compatible con PHP 8.4, Laravel 12, Filament 4 y Livewire 3.7
+- 🚀 Compatible con PHP 8.2+, Laravel 10/11/12, Filament 3 y Livewire 3.5+
+- 🗂️ Carpetas anidadas (materializadas en S3), uploader en modal y buscador en el grid
 
 ## Requisitos
 
-- PHP ^8.4
-- Laravel ^12.0
-- Filament ^4.0
-- Livewire ^3.7
-- Spatie Laravel Media Library ^11.0
+- PHP ^8.2 | ^8.3 | ^8.4
+- Laravel ^10.0 | ^11.0 | ^12.0
+- Filament ^3.0
+- Livewire ^3.5+
+- Spatie Laravel Media Library ^10.0 | ^11.0
 
 ## Instalación
 
 ### 1. Instalar el paquete
 
 ```bash
-composer require marzioperez/filament-media-manager:^1.0
+composer require marzioperez/filament-media-manager:"^0.0"
 ```
 
 ### 2. Publicar archivos de configuración y migraciones

@@ -8,9 +8,14 @@ use Filament\Support\Assets\Css;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaBulkUploader;
+use Marzio\MediaManager\Http\Livewire\Filament\MediaFolders;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaGalleryPickerGrid;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaGrid;
 use Marzio\MediaManager\Http\Livewire\Filament\MediaPickerGrid;
+use Marzio\MediaManager\Support\FolderAwareFileRemover;
+use Marzio\MediaManager\Support\FolderAwarePathGenerator;
+use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
+use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 
 class MediaManagerServiceProvider extends ServiceProvider {
 
@@ -52,6 +57,7 @@ class MediaManagerServiceProvider extends ServiceProvider {
 
         // Livewire components (gestor principal)
         Livewire::component('media-manager.media-grid', MediaGrid::class);
+        Livewire::component('media-manager.media-folders', MediaFolders::class);
         Livewire::component('media-manager.media-picker-grid', MediaPickerGrid::class);
         Livewire::component('media-manager.media-gallery-picker-grid', MediaGalleryPickerGrid::class);
         Livewire::component('media-manager.media-bulk-uploader', MediaBulkUploader::class);
@@ -76,5 +82,25 @@ class MediaManagerServiceProvider extends ServiceProvider {
     public function register(): void {
         // Config merge si usas config/media-manager.php
         $this->mergeConfigFrom(__DIR__ . '/../config/media-manager.php', 'media-manager');
+
+        // Activa el PathGenerator que ubica los ficheros dentro del prefijo
+        // físico de su carpeta en S3. Solo se activa si el proyecto anfitrión
+        // sigue usando el generador por defecto de Spatie, para no pisar una
+        // configuración personalizada. Cuando un media no tiene carpeta el
+        // comportamiento es idéntico al generador por defecto.
+        $current = config('media-library.path_generator');
+
+        if (empty($current) || $current === DefaultPathGenerator::class) {
+            config(['media-library.path_generator' => FolderAwarePathGenerator::class]);
+        }
+
+        // FileRemover que borra el original por ruta exacta. Necesario porque,
+        // al no usar subcarpeta por media, varios ficheros comparten directorio.
+        // Solo se activa si el proyecto usa el remover por defecto de Spatie.
+        $currentRemover = config('media-library.file_remover_class');
+
+        if (empty($currentRemover) || $currentRemover === DefaultFileRemover::class) {
+            config(['media-library.file_remover_class' => FolderAwareFileRemover::class]);
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,7 +13,9 @@ class MediaGrid extends Component {
 
     use WithPagination;
 
+    #[Url(as: 'q', history: true)]
     public string $search = '';
+
     public string $sort   = 'latest';
     public ?int $currentFolderId = null;
     public array $selected = [];
@@ -34,7 +37,8 @@ class MediaGrid extends Component {
         return Media::query()
             ->where('model_type', VaultResolver::modelType())
             ->where('model_id', VaultResolver::modelId())
-            ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
+            // Muestra solo los medios de la carpeta actual (raíz = sin carpeta).
+            ->where('media_folder_id', $this->currentFolderId)
             ->when($this->search, fn($q) => $q->where(function($qq){
                 $s = "%".$this->search."%";
                 $qq->where('file_name','like',$s)->orWhere('mime_type','like',$s);

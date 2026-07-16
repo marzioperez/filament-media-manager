@@ -1,6 +1,232 @@
 /* Media Manager Styles */
 
 /* ========================================
+   MEDIA MANAGER - Grid header (título + buscador)
+   ======================================== */
+
+.mm-grid-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.mm-grid-search {
+    flex: 0 1 20rem;
+    min-width: 12rem;
+    font-weight: 400;
+}
+
+.mm-grid-empty {
+    font-size: 0.8125rem;
+    color: rgb(107 114 128);
+    padding: 0.5rem 0 0.25rem;
+}
+
+:is(.dark) .mm-grid-empty {
+    color: rgb(156 163 175);
+}
+
+/* ========================================
+   MEDIA MANAGER - Folders (carpetas)
+   ======================================== */
+
+.mm-folders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Breadcrumbs */
+.mm-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.mm-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(107 114 128);
+    transition: background-color 0.15s ease, color 0.15s ease;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mm-crumb:hover {
+    background: rgba(var(--gray-100), 1);
+    color: rgb(17 24 39);
+}
+
+:is(.dark) .mm-crumb {
+    color: rgb(156 163 175);
+}
+
+:is(.dark) .mm-crumb:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgb(243 244 246);
+}
+
+.mm-crumb--current {
+    color: rgb(17 24 39);
+    font-weight: 600;
+    cursor: default;
+}
+
+:is(.dark) .mm-crumb--current {
+    color: rgb(243 244 246);
+}
+
+.mm-crumb-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+}
+
+.mm-crumb-sep {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(var(--gray-400), 1);
+    flex-shrink: 0;
+}
+
+:is(.dark) .mm-crumb-sep {
+    color: rgb(75 85 99);
+}
+
+/* Folders grid */
+.mm-folders-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+    .mm-folders-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+    .mm-folders-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.mm-folder-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-radius: 0.625rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(249 250 251);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+:is(.dark) .mm-folder-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.mm-folder-card:hover {
+    border-color: rgb(var(--primary-500));
+    background: rgba(var(--primary-500), 0.06);
+    box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.12);
+}
+
+.mm-folder-open {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    text-align: left;
+}
+
+.mm-folder-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: rgb(var(--primary-500));
+}
+
+.mm-folder-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.mm-folder-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgb(17 24 39);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+:is(.dark) .mm-folder-name {
+    color: rgb(243 244 246);
+}
+
+.mm-folder-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.4rem;
+    border-radius: 0.375rem;
+    color: rgb(156 163 175);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.mm-folder-delete svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.mm-folder-card:hover .mm-folder-delete {
+    opacity: 1;
+}
+
+.mm-folder-delete:hover {
+    color: rgb(220 38 38);
+    background: rgb(254 242 242);
+}
+
+:is(.dark) .mm-folder-delete:hover {
+    color: rgb(248 113 113);
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.mm-folders-empty {
+    margin-top: 1rem;
+    font-size: 0.8125rem;
+    color: rgb(107 114 128);
+}
+
+:is(.dark) .mm-folders-empty {
+    color: rgb(156 163 175);
+}
+
+
+/* ========================================
    MEDIA PICKER - Modal Component
    ======================================== */
 
@@ -182,9 +408,8 @@
 .media-picker-thumb img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
-    padding: 0.25rem;
 }
 
 .media-picker-thumb--file {
@@ -389,28 +614,6 @@
 .media-manager-grid {
     gap: 1.5rem;
     padding: 1rem 0;
-}
-
-/* Grilla principal del Gestor de Medios.
-   Definida con CSS grid explícito para no depender de las utilidades
-   `fi-grid`/`--cols-*` (que solo existen en Filament 4). Así se ve en
-   4 columnas tanto en Filament 3 como 4. */
-.media-manager-main-grid {
-    display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 1rem;
-}
-
-@media (min-width: 640px) {
-    .media-manager-main-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1024px) {
-    .media-manager-main-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
 }
 
 .media-manager-grid-item {
@@ -782,9 +985,8 @@ section.fi-section {
 .media-gallery-thumb img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
-    padding: 0.25rem;
 }
 
 .media-gallery-thumb-fallback {

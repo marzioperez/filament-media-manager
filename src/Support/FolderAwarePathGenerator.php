@@ -67,4 +67,14 @@ class FolderAwarePathGenerator implements PathGenerator {
 
         return static::$folderPathCache[$folderId];
     }
+
+    /**
+     * Limpia la caché de rutas de carpeta. Necesario tras mover un media a
+     * otra carpeta dentro del mismo request, para que las rutas calculadas
+     * después del cambio reflejen la carpeta nueva (y no la que quedó en
+     * caché de una lectura anterior).
+     */
+    public static function forgetCache(): void {
+        static::$folderPathCache = [];
+    }
 }

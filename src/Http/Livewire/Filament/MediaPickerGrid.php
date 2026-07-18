@@ -4,7 +4,11 @@ namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Marzio\MediaManager\Http\Livewire\Concerns\NavigatesMediaFolders;
+use Marzio\MediaManager\Http\Livewire\Concerns\PollsPendingConversions;
+use Marzio\MediaManager\Models\MediaFolder;
+use Marzio\MediaManager\Support\UniqueFileNamer;
+use Marzio\MediaManager\Support\UploadContext;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -13,7 +17,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaPickerGrid extends Component {
 
-    use WithPagination, WithFileUploads;
+    use WithPagination, WithFileUploads, PollsPendingConversions, NavigatesMediaFolders;
 
     public $preset = null;
     public string $hostId;
@@ -25,6 +29,14 @@ class MediaPickerGrid extends Component {
 
     public function mount($preset = null) {
         $this->applyPreset($preset);
+
+        // Si ya hay un recurso seleccionado, abrimos el picker directamente en
+        // su carpeta para que el usuario lo vea resaltado sin tener que
+        // navegar manualmente hasta ahí.
+        if ($preset) {
+            $media = is_numeric($preset) ? Media::find($preset) : Media::where('uuid', $preset)->first();
+            $this->currentFolderId = $media?->media_folder_id;
+        }
     }
 
     protected function applyPreset($preset): void {
@@ -47,7 +59,8 @@ class MediaPickerGrid extends Component {
     public function getItemsProperty() {
         $query = Media::query()
             ->where('model_type', VaultResolver::modelType())
-            ->where('model_id', VaultResolver::modelId());
+            ->where('model_id', VaultResolver::modelId())
+            ->where('media_folder_id', $this->currentFolderId);
 
         // Aplicar búsqueda
         if ($this->search) {
@@ -88,34 +101,39 @@ class MediaPickerGrid extends Component {
         $this->isUploading = true;
 
         $vault = VaultResolver::model();
-        $disk = 'private';
-        $dir = 'tmp-media';
+        $tmpDisk = 'private';
+        $tmpDir = 'tmp-media';
+        $mediaDisk = config('media-manager.disk', 'media-manager');
 
-        foreach ($this->pickerFiles as $file) {
-            $original = $file->getClientOriginalName();
-            $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
-            $base = pathinfo($original, PATHINFO_FILENAME);
-            $safeBase = Str::slug($base, '-');
-            if ($safeBase === '') {
-                $safeBase = 'file';
+        $folder = $this->currentFolderId ? MediaFolder::find($this->currentFolderId) : null;
+        $targetDir = $folder ? trim($folder->path, '/') : '';
+
+        UploadContext::set($this->currentFolderId);
+
+        try {
+            foreach ($this->pickerFiles as $file) {
+                $original = $file->getClientOriginalName();
+                $tmpCandidate = UniqueFileNamer::forDisk($tmpDisk, $tmpDir, $original, slugify: true);
+                $relative = $file->storeAs($tmpDir, $tmpCandidate, $tmpDisk);
+
+                // Nombre final único dentro de la carpeta destino real (no el
+                // directorio temporal), para no chocar con ficheros ya
+                // existentes ahí.
+                $finalCandidate = UniqueFileNamer::forDisk($mediaDisk, $targetDir, $tmpCandidate, slugify: true);
+
+                $media = $vault
+                    ->addMediaFromDisk($relative, $tmpDisk)
+                    ->usingFileName($finalCandidate)
+                    ->usingName(pathinfo($finalCandidate, PATHINFO_FILENAME))
+                    ->toMediaCollection(config('media-manager.collection', 'assets'), $mediaDisk);
+
+                $media->media_folder_id = $this->currentFolderId;
+                $media->save();
+
+                Storage::disk($tmpDisk)->delete($relative);
             }
-            $candidate = $safeBase . ($ext ? ('.' . $ext) : '');
-
-            $i = 0;
-            while (Storage::disk($disk)->exists($dir . '/' . $candidate)) {
-                $i++;
-                $candidate = $safeBase . '-' . $i . ($ext ? ('.' . $ext) : '');
-            }
-
-            $relative = $file->storeAs($dir, $candidate, $disk);
-
-            $vault
-                ->addMediaFromDisk($relative, $disk)
-                ->usingFileName($candidate)
-                ->usingName(pathinfo($candidate, PATHINFO_FILENAME))
-                ->toMediaCollection(config('media-manager.collection', 'assets'), config('media-manager.disk', 'media-manager'));
-
-            Storage::disk($disk)->delete($relative);
+        } finally {
+            UploadContext::clear();
         }
 
         $this->reset('pickerFiles');
@@ -132,7 +150,12 @@ class MediaPickerGrid extends Component {
     }
 
     public function render() {
-        return view('media-manager::livewire.filament.media-picker-grid', ['media' => $this->items]);
+        $items = $this->items;
+
+        return view('media-manager::livewire.filament.media-picker-grid', [
+            'media' => $items,
+            'hasPendingConversions' => $this->mediaHasPendingConversions($items),
+        ]);
     }
 
 }

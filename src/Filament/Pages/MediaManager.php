@@ -3,12 +3,14 @@
 namespace Marzio\MediaManager\Filament\Pages;
 
 use Marzio\MediaManager\Models\MediaFolder;
+use Marzio\MediaManager\Support\UniqueFileNamer;
 use Marzio\MediaManager\Support\UploadContext;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaManager extends Page {
@@ -19,12 +21,28 @@ class MediaManager extends Page {
     protected string $view = 'media-manager::filament.pages.media-manager';
     protected static ?int $navigationSort = 20;
 
+    #[Url(as: 'folder', history: true)]
     public ?int $currentFolderId = null;
 
     public function mount(): void {
         // Asegura que el vault exista (crea MediaVault id=1 si aún no
         // hay resolver custom; si lo hay, normalmente el modelo ya existe).
         VaultResolver::model();
+
+        // El id de carpeta puede venir de la URL (deep link / recarga). Si no
+        // existe o no pertenece al vault actual, volvemos a la raíz en vez de
+        // dejar un id inválido que rompería el filtrado del grid.
+        if ($this->currentFolderId !== null) {
+            $exists = MediaFolder::query()
+                ->where('model_type', VaultResolver::modelType())
+                ->where('model_id', VaultResolver::modelId())
+                ->whereKey($this->currentFolderId)
+                ->exists();
+
+            if (! $exists) {
+                $this->currentFolderId = null;
+            }
+        }
     }
 
     /**
@@ -67,7 +85,7 @@ class MediaManager extends Page {
 
                 // Los ficheros conviven sin subcarpeta numérica, así que
                 // garantizamos un nombre único dentro de la carpeta (o la raíz).
-                $original = $this->uniqueFileName($mediaDisk, $dir, $original);
+                $original = UniqueFileNamer::forDisk($mediaDisk, $dir, $original);
 
                 $media = $vault
                     ->addMediaFromDisk($item['path'], $item['disk'])
@@ -98,27 +116,6 @@ class MediaManager extends Page {
     public function setFolder(?int $id = null): void {
         $this->currentFolderId = $id;
         $this->dispatch('folder-changed');
-    }
-
-    /**
-     * Devuelve un nombre de fichero único dentro de un directorio del disco,
-     * añadiendo un sufijo "-1", "-2"… si ya existe.
-     */
-    protected function uniqueFileName(string $disk, string $dir, string $fileName): string {
-        $base   = pathinfo($fileName, PATHINFO_FILENAME);
-        $ext    = pathinfo($fileName, PATHINFO_EXTENSION);
-        $suffix = $ext !== '' ? '.' . $ext : '';
-        $prefix = $dir !== '' ? rtrim($dir, '/') . '/' : '';
-
-        $candidate = $base . $suffix;
-        $i = 0;
-
-        while (Storage::disk($disk)->exists($prefix . $candidate)) {
-            $i++;
-            $candidate = $base . '-' . $i . $suffix;
-        }
-
-        return $candidate;
     }
 
 }

@@ -4,6 +4,7 @@ namespace Marzio\MediaManager\Http\Livewire\Filament;
 
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Marzio\MediaManager\Http\Livewire\Concerns\NavigatesMediaFolders;
 use Marzio\MediaManager\Models\MediaFolder;
 use Marzio\MediaManager\Vault\VaultResolver;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -19,29 +20,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class MediaFolders extends Component {
 
-    public ?int $currentFolderId = null;
+    use NavigatesMediaFolders;
+
     public string $newFolderName = '';
 
     protected $listeners = ['refresh-media-grid' => '$refresh'];
-
-    /** Subcarpetas directas de la carpeta actual, dentro del vault activo. */
-    public function getFoldersProperty() {
-        return MediaFolder::query()
-            ->where('model_type', VaultResolver::modelType())
-            ->where('model_id', VaultResolver::modelId())
-            ->where('parent_id', $this->currentFolderId)
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function getCurrentFolderProperty(): ?MediaFolder {
-        return $this->currentFolderId ? MediaFolder::find($this->currentFolderId) : null;
-    }
-
-    /** Cadena de ancestros para pintar los breadcrumbs. */
-    public function getBreadcrumbsProperty() {
-        return $this->currentFolder?->breadcrumbs() ?? collect();
-    }
 
     public function createFolder(): void {
         $data = $this->validate([

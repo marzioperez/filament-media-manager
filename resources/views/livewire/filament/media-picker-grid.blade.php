@@ -1,4 +1,4 @@
-<div x-data="{ selectedDetail: null }" class="media-picker-container">
+<div x-data="{ selectedDetail: null }" @if($hasPendingConversions) wire:poll.3s @endif class="media-picker-container">
     {{-- Barra de busqueda y upload --}}
     <div class="media-picker-toolbar">
         <div class="media-picker-search">
@@ -11,6 +11,8 @@
             </x-filament::input.wrapper>
         </div>
     </div>
+
+    @include('media-manager::livewire.filament.partials.media-folder-nav')
 
     {{-- Zona de carga drag & drop --}}
     <div x-data="{ dragging: false }"
@@ -85,6 +87,9 @@
                         @if($mIsImage)
                             <div class="media-picker-thumb">
                                 <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getUrl('webp') : $m->getUrl() }}" alt="{{ $m->file_name }}" loading="lazy" />
+                                @unless($m->hasGeneratedConversion('webp'))
+                                    <span class="mm-processing-badge" title="Optimizando imagen...">Procesando…</span>
+                                @endunless
                             </div>
                         @else
                             <div class="media-picker-thumb media-picker-thumb--file">

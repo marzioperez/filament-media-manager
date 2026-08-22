@@ -27,40 +27,58 @@ Gestor multimedia para Filament PHP que permite cargar, organizar y seleccionar 
 composer require marzioperez/filament-media-manager:^1.0
 ```
 
-### 2. Publicar archivos de configuración y migraciones
+### 2. Configurar Spatie Media Library
 
-```bash
-# Publicar migraciones
-php artisan vendor:publish --tag=media-manager-migrations
+**Este paso va primero, y el orden importa.**
 
-# Publicar configuración (opcional)
-php artisan vendor:publish --tag=media-manager-config
-
-# Publicar vistas (opcional, solo si quieres personalizarlas)
-php artisan vendor:publish --tag=media-manager-views
-
-# Publicar seeder (opcional)
-php artisan vendor:publish --tag=media-manager-seeders
-```
-
-### 3. Ejecutar migraciones
-
-```bash
-php artisan migrate
-```
-
-Esto creará las tablas `media_vaults` y `media_folders`, y añadirá la columna
-`media_folder_id` a la tabla `media` de Spatie (necesaria para organizar los
-archivos en carpetas).
-
-### 4. Configurar Spatie Media Library
-
-Asegúrate de tener configurado Spatie Media Library en tu proyecto. Si aún no lo has hecho:
+Media Manager añade la columna `media_folder_id` a la tabla `media` de Spatie,
+así que esa tabla debe existir antes. Si aún no la tienes:
 
 ```bash
 php artisan vendor:publish --provider="Spatie\MediaLibrary\MediaLibraryServiceProvider" --tag="medialibrary-migrations"
+```
+
+### 3. Publicar archivos de configuración (opcional)
+
+```bash
+# Configuración
+php artisan vendor:publish --tag=media-manager-config
+
+# Vistas (solo si quieres personalizarlas)
+php artisan vendor:publish --tag=media-manager-views
+
+# Seeder
+php artisan vendor:publish --tag=media-manager-seeders
+```
+
+Las migraciones **no** necesitan publicarse: el paquete las registra por sí
+mismo. Publícalas solo si necesitas editar el esquema:
+
+```bash
+php artisan vendor:publish --tag=media-manager-migrations
+```
+
+El archivo se copia a `database/migrations/` con la fecha del momento, siguiendo
+la convención de tu proyecto. En cuanto existe esa copia, el paquete deja de
+cargar la suya para no ejecutar la misma migración dos veces. Republicar
+actualiza el archivo ya publicado en lugar de crear un duplicado con otra fecha.
+
+### 4. Ejecutar migraciones
+
+```bash
 php artisan migrate
 ```
+
+Esto crea las tablas `media_vaults` y `media_folders`, y añade la columna
+`media_folder_id` a la tabla `media` de Spatie (necesaria para organizar los
+archivos en carpetas).
+
+Todo vive en una única migración, `create_media_manager_tables`, que se ejecuta
+siempre al final de la cola. El motivo: la columna `media_folder_id` se añade a
+una tabla de terceros que tu proyecto publica con la fecha del día, así que
+cualquier fecha fija podría quedar antes y la columna nunca llegaría a crearse.
+La migración además es idempotente, por lo que es segura sobre instalaciones que
+ya ejecutaron las tres migraciones antiguas.
 
 ### 5. Configurar el disco de almacenamiento
 
@@ -196,6 +214,66 @@ public static function form(Form $form): Form
 }
 ```
 
+### Cargar recursos por código
+
+El facade `MediaManager` incorpora ficheros a la biblioteca desde seeders,
+comandos, importadores o jobs, con el mismo resultado que el uploader del panel:
+el fichero queda dentro del prefijo físico de su carpeta y el media queda
+vinculado a ella, de modo que aparece en el gestor donde corresponde.
+
+```php
+use Marzio\MediaManager\Facades\MediaManager;
+
+// Desde el disco "public" (por defecto), a la raíz del vault
+$media = MediaManager::add('logos/logo.svg');
+$url = $media->getUrl();
+
+// Dentro de una carpeta — se crea si no existe
+$media = MediaManager::add('logos/logo.svg', folder: 'marca');
+
+// Carpetas anidadas
+$media = MediaManager::add('banners/home.jpg', folder: 'banners/home');
+
+// Desde otro disco de origen
+$media = MediaManager::add('seed/logo.svg', folder: 'marca', disk: 'seed-assets');
+
+// Atajo que devuelve la URL directamente
+$url = MediaManager::url('logos/logo.svg', folder: 'marca');
+
+// Desde una ruta absoluta, fuera de los discos de Laravel
+$media = MediaManager::addFromFile(storage_path('app/tmp/foto.jpg'), folder: 'fotos');
+```
+
+#### Parámetros
+
+| Parámetro | Por defecto | Descripción |
+|---|---|---|
+| `path` | — | Ruta del fichero dentro del disco de origen |
+| `folder` | `null` | Carpeta destino. Admite anidamiento con `/`. Se crea si no existe. `null` deja el recurso en la raíz |
+| `disk` | `'public'` | Disco de **origen**. El de destino es siempre `media-manager.disk` |
+| `vault` | `null` | Vault propietario. Por defecto el del `VaultResolver` |
+| `fileName` | `null` | Nombre final. Por defecto el del fichero de origen |
+| `unique` | `false` | Si el nombre ya existe en la carpeta, añade `-1`, `-2`… |
+| `preservingOriginal` | `true` | Conservar el fichero de origen |
+
+Sobre `unique`: el valor por defecto es `false` a propósito. Llamadas repetidas
+sobrescriben el mismo objeto y producen siempre la misma URL, que es lo que
+necesitas en un seeder cuando esa URL queda embebida en otros registros. Pásalo
+a `true` en importadores donde cada fichero deba conservarse por separado.
+
+#### Trabajar con carpetas
+
+```php
+// Devuelve la carpeta, creándola (y a sus ancestros) si no existe
+$folder = MediaManager::folder('documentos/facturas');
+
+// Busca sin crear — null si algún tramo no existe
+$folder = MediaManager::findFolder('documentos/facturas');
+```
+
+Las carpetas creadas por código son indistinguibles de las creadas por la
+interfaz: mismo slug, mismo `path` y mismo scope por vault.
+
 ## Configuración
 
 El archivo de configuración `config/media-manager.php` contiene las siguientes opciones:
@@ -254,14 +332,23 @@ src/
 │           ├── MediaPickerGrid.php   # Grid en el picker modal
 │           ├── MediaGalleryPickerGrid.php
 │           └── MediaBulkUploader.php # Uploader masivo
+├── Facades/
+│   └── MediaManager.php              # Facade de la API programática
 ├── Models/
 │   ├── MediaVault.php                # Modelo principal
 │   └── MediaFolder.php               # Modelo de carpeta
 ├── Support/
 │   ├── UploadContext.php             # Contexto de subida (carpeta destino)
+│   ├── MediaFolderResolver.php       # Resuelve/crea carpetas desde una ruta legible
+│   ├── UniqueFileNamer.php           # Nombres únicos dentro de un directorio
 │   ├── FolderAwarePathGenerator.php  # Ubica los ficheros en el prefijo de su carpeta
 │   └── FolderAwareFileRemover.php    # Borra el original por ruta exacta (borrado seguro)
+├── MediaManagerService.php           # API programática (add/url/folder)
 └── MediaManagerServiceProvider.php   # Service Provider
+
+database/
+└── migrations/
+    └── 9999_12_31_000000_create_media_manager_tables.php   # Migración única
 ```
 
 ## Licencia

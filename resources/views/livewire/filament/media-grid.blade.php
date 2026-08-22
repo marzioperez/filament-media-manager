@@ -1,15 +1,54 @@
-<div x-data="{ selected: null }" class="fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(12, minmax(0, 1fr)); --cols-2xl: repeat(12, minmax(0, 1fr));">
+<div x-data="{ selected: null }"
+     @if($hasPendingConversions) wire:poll.3s @endif
+     class="fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(12, minmax(0, 1fr)); --cols-2xl: repeat(12, minmax(0, 1fr));">
     <div class="fi-grid-col lg:fi-grid-col-span" x-transition :style="selected ? '--col-span-default: span 1 / span 1; --col-span-lg: span 8 / span 8;' : '--col-span-default: span 1 / span 1; --col-span-lg: span 12 / span 12;'">
-        <x-filament::section heading="Recursos multimedia">
+        <x-filament::section>
+            <x-slot name="heading">
+                <div class="mm-grid-header">
+                    <span>Recursos multimedia</span>
+                    <div class="mm-grid-search">
+                        <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
+                            <x-filament::input
+                                type="text"
+                                placeholder="Buscar recursos..."
+                                wire:model.live.debounce.500ms="search" />
+                        </x-filament::input.wrapper>
+                    </div>
+                </div>
+            </x-slot>
+
             <div class="fi-sc-component">
+                @if(count($selected) > 0)
+                    <div class="mm-bulk-actions-bar">
+                        <span class="mm-bulk-actions-bar-count">{{ count($selected) }} {{ count($selected) === 1 ? 'seleccionado' : 'seleccionados' }}</span>
+                        <div class="mm-bulk-actions-bar-buttons">
+                            <x-filament::button size="sm" color="gray" icon="heroicon-m-folder-arrow-down" wire:click="openFolderPickerForSelected('move')">
+                                Mover a…
+                            </x-filament::button>
+                            <x-filament::button size="sm" color="gray" icon="heroicon-m-document-duplicate" wire:click="openFolderPickerForSelected('copy')">
+                                Copiar a…
+                            </x-filament::button>
+                            <x-filament::button size="sm" color="danger" icon="heroicon-m-trash" wire:click="deleteSelectedBulk" wire:confirm="¿Eliminar los archivos seleccionados? Esta acción no se puede deshacer.">
+                                Eliminar
+                            </x-filament::button>
+                            <x-filament::button size="sm" color="gray" wire:click="clearSelected">
+                                Cancelar
+                            </x-filament::button>
+                        </div>
+                    </div>
+                @endif
+
+                @if($this->search !== '' && $media->isEmpty())
+                    <p class="mm-grid-empty">No se encontraron recursos para «{{ $this->search }}».</p>
+                @endif
                 <div class="space-y-6">
-                    <div class="fi-sc fi-sc-has-gap fi-grid  sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(4, minmax(0, 1fr)); --cols-2xl: repeat(4, minmax(0, 1fr));">
+                    <div class="media-manager-main-grid fi-sc fi-sc-has-gap fi-grid sm:fi-grid-cols xl:fi-grid-cols 2xl:fi-grid-cols" style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-sm: repeat(3, minmax(0, 1fr)); --cols-xl: repeat(4, minmax(0, 1fr)); --cols-2xl: repeat(4, minmax(0, 1fr));">
                         @foreach($media as $m)
                             @php
                                 $isImage = str_starts_with($m->mime_type, 'image/');
                                 $isPdf = $m->mime_type === 'application/pdf' || \Illuminate\Support\Str::endsWith(strtolower($m->file_name), '.pdf');
                             @endphp
-                            <div class="cursor-pointer hover:opacity-75 flex items-center justify-center"
+                            <div class="media-manager-grid-item cursor-pointer flex items-center justify-center"
                                 @click="selected = {
                                     id: {{ $m->id }},
                                     uuid: '{{ $m->uuid }}',
@@ -20,8 +59,19 @@
                                     created: '{{ $m->created_at->format('d/m/Y H:i') }}'
                                 }"
                             >
+                                <input type="checkbox"
+                                       class="mm-select-checkbox"
+                                       title="Seleccionar"
+                                       @click.stop="$wire.toggleSelected('{{ $m->uuid }}')"
+                                       @checked(in_array($m->uuid, $selected, true))
+                                />
                                 @if($isImage)
-                                    <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getFullUrl('webp') : $m->getUrl() }}" alt="{{ $m->file_name }}" class="w-full rounded" style="max-height: 250px; object-fit: cover; object-position: center;" />
+                                    <div class="relative w-full">
+                                        <img src="{{ $m->hasGeneratedConversion('webp') ? $m->getFullUrl('webp') : $m->getUrl() }}" alt="{{ $m->file_name }}" class="media-grid-image w-full" />
+                                        @unless($m->hasGeneratedConversion('webp'))
+                                            <span class="mm-processing-badge" title="Optimizando imagen...">Procesando…</span>
+                                        @endunless
+                                    </div>
                                 @elseif($isPdf)
                                     <div class="w-full rounded p-6 dark:bg-gray-800">
                                         <svg fill="#c8090b" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
@@ -69,7 +119,9 @@
                     </p>
                     <p><strong>Peso:</strong> <span x-text="selected.size"></span></p>
 
-                    <div class="mt-3 flex gap-2">
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <x-filament::button color="gray" icon="heroicon-m-folder-arrow-down" x-on:click="$wire.openFolderPickerFor('move', selected.uuid)">Mover</x-filament::button>
+                        <x-filament::button color="gray" icon="heroicon-m-document-duplicate" x-on:click="$wire.openFolderPickerFor('copy', selected.uuid)">Copiar</x-filament::button>
                         <x-filament::button color="gray" @click="selected = null">Cerrar</x-filament::button>
                         <x-filament::button color="danger" x-on:click="$wire.deleteSelected(selected.id); selected = null">Eliminar</x-filament::button>
                     </div>
@@ -77,4 +129,75 @@
             </template>
         </x-filament::section>
     </div>
+
+    {{-- Modal: elegir carpeta destino (mover / copiar) --}}
+    <x-filament::modal id="media-manager-folder-picker" width="md">
+        <x-slot name="heading">
+            {{ $folderPickerMode === 'copy' ? 'Copiar a…' : 'Mover a…' }}
+        </x-slot>
+        <x-slot name="description">
+            Carpeta destino:
+            <strong>{{ $this->folderPickerCurrentFolder?->path ?? 'la raíz' }}</strong>
+        </x-slot>
+
+        <div class="space-y-3">
+            <nav class="mm-breadcrumbs" aria-label="Ruta de carpetas">
+                <button type="button"
+                        wire:click="goToFolderPickerFolder"
+                        @class(['mm-crumb', 'mm-crumb--current' => ! $folderPickerFolderId])>
+                    Inicio
+                </button>
+                @foreach($this->folderPickerBreadcrumbs as $crumb)
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mm-crumb-sep">
+                        <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
+                    </svg>
+                    <button type="button"
+                            wire:click="goToFolderPickerFolder({{ $crumb->id }})"
+                            @class(['mm-crumb', 'mm-crumb--current' => $crumb->id === $folderPickerFolderId])>
+                        {{ $crumb->name }}
+                    </button>
+                @endforeach
+            </nav>
+
+            <div class="mm-folder-select-list">
+                @forelse($this->folderPickerFolders as $folder)
+                    <button type="button"
+                            wire:key="mm-fp-folder-{{ $folder->id }}"
+                            wire:click="openFolderPickerFolder({{ $folder->id }})"
+                            class="mm-folder-select-item">
+                        <x-filament::icon icon="heroicon-o-folder" class="h-4 w-4 text-gray-400" />
+                        {{ $folder->name }}
+                    </button>
+                @empty
+                    <div class="mm-folder-select-item">Esta carpeta no tiene subcarpetas.</div>
+                @endforelse
+            </div>
+        </div>
+
+        <x-slot name="footerActions">
+            <x-filament::button color="gray" x-on:click="$dispatch('close-modal', { id: 'media-manager-folder-picker' })">
+                Cancelar
+            </x-filament::button>
+            <x-filament::button wire:click="confirmFolderPicker" wire:loading.attr="disabled">
+                {{ $folderPickerMode === 'copy' ? 'Copiar aquí' : 'Mover aquí' }}
+            </x-filament::button>
+        </x-slot>
+    </x-filament::modal>
+
+    {{-- Modal: confirmar reindexado de referencias de URL tras mover --}}
+    <x-filament::modal id="media-manager-reindex-confirm" width="md" :close-by-clicking-away="false">
+        <x-slot name="heading">Actualizar referencias</x-slot>
+        <x-slot name="description">
+            Este recurso cambió de URL al moverlo. ¿Deseas actualizar las referencias guardadas en el sitio (campos que hayan almacenado su URL)?
+        </x-slot>
+
+        <x-slot name="footerActions">
+            <x-filament::button color="gray" wire:click="skipReindex">
+                No, gracias
+            </x-filament::button>
+            <x-filament::button wire:click="confirmReindex" wire:loading.attr="disabled">
+                Sí, actualizar referencias
+            </x-filament::button>
+        </x-slot>
+    </x-filament::modal>
 </div>

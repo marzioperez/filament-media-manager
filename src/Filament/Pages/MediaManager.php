@@ -2,10 +2,15 @@
 
 namespace Marzio\MediaManager\Filament\Pages;
 
-use Marzio\MediaManager\Models\MediaVault;
+use Marzio\MediaManager\Models\MediaFolder;
+use Marzio\MediaManager\Support\UniqueFileNamer;
+use Marzio\MediaManager\Support\UploadContext;
+use Marzio\MediaManager\Vault\VaultResolver;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaManager extends Page {
@@ -16,46 +21,95 @@ class MediaManager extends Page {
     protected string $view = 'media-manager::filament.pages.media-manager';
     protected static ?int $navigationSort = 20;
 
-    #[\App\Filament\Pages\Url(as: 'q', history: true)]
-    public string $search = '';
-
-    #[\App\Filament\Pages\Url(as: 'sort', history: true)]
-    public string $sort = 'latest';
-
+    #[Url(as: 'folder', history: true)]
     public ?int $currentFolderId = null;
 
     public function mount(): void {
-        MediaVault::firstOrCreate(['id' => 1]);
+        // Asegura que el vault exista (crea MediaVault id=1 si aún no
+        // hay resolver custom; si lo hay, normalmente el modelo ya existe).
+        VaultResolver::model();
+
+        // El id de carpeta puede venir de la URL (deep link / recarga). Si no
+        // existe o no pertenece al vault actual, volvemos a la raíz en vez de
+        // dejar un id inválido que rompería el filtrado del grid.
+        if ($this->currentFolderId !== null) {
+            $exists = MediaFolder::query()
+                ->where('model_type', VaultResolver::modelType())
+                ->where('model_id', VaultResolver::modelId())
+                ->whereKey($this->currentFolderId)
+                ->exists();
+
+            if (! $exists) {
+                $this->currentFolderId = null;
+            }
+        }
     }
 
-    public function getMediaQueryProperty() {
-        return Media::query()
-            ->where('model_type', MediaVault::class)
-            ->where('model_id', 1)
-            ->when($this->currentFolderId, fn($q)=>$q->where('media_folder_id', $this->currentFolderId))
-            ->latest();
+    /**
+     * Botón "Cargar recursos" junto al título de la página. Abre un modal con
+     * el uploader masivo.
+     */
+    protected function getHeaderActions(): array {
+        return [
+            Action::make('upload')
+                ->label('Cargar recursos')
+                ->icon('heroicon-m-arrow-up-tray')
+                ->color('primary')
+                ->modalHeading('Cargar recursos')
+                ->modalDescription(fn () => $this->currentFolderId
+                    ? 'Los archivos se subirán a la carpeta actual.'
+                    : 'Los archivos se subirán a la raíz.')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Cerrar')
+                ->modalContent(fn () => view('media-manager::filament.pages.partials.uploader-modal', [
+                    'currentFolderId' => $this->currentFolderId,
+                ])),
+        ];
     }
 
     #[On('upload-finished')]
     public function saveUploads(array $uploads): void {
-        $vault = MediaVault::findOrFail(1);
+        $vault     = VaultResolver::model();
+        $mediaDisk = config('media-manager.disk', 'media-manager');
 
-        foreach ($uploads as $item) {
-            $original = $item['original'] ?? basename($item['path']);
+        $folder = $this->currentFolderId ? MediaFolder::find($this->currentFolderId) : null;
+        $dir    = $folder ? trim($folder->path, '/') : '';
 
-            $media = $vault
-                ->addMediaFromDisk($item['path'], $item['disk'])
-                ->usingFileName($original)                           // nombre exacto del archivo en S3
-                ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
-                ->toMediaCollection('assets', 'media-manager');
+        // Comunica la carpeta destino al PathGenerator, de modo que el fichero
+        // se copie directamente dentro del prefijo de la carpeta en S3.
+        UploadContext::set($this->currentFolderId);
 
-            // $media->media_folder_id = $this->currentFolderId;
-            $media->save();
+        try {
+            foreach ($uploads as $item) {
+                $original = $item['original'] ?? basename($item['path']);
 
-            Storage::disk($item['disk'])->delete($item['path']);
+                // Los ficheros conviven sin subcarpeta numérica, así que
+                // garantizamos un nombre único dentro de la carpeta (o la raíz).
+                $original = UniqueFileNamer::forDisk($mediaDisk, $dir, $original);
+
+                $media = $vault
+                    ->addMediaFromDisk($item['path'], $item['disk'])
+                    ->usingFileName($original)                           // nombre exacto del archivo en S3
+                    ->usingName(pathinfo($original, PATHINFO_FILENAME))  // columna 'name'
+                    ->toMediaCollection(config('media-manager.collection', 'assets'), $mediaDisk);
+
+                // Persiste la carpeta a la que pertenece el media (para el filtrado
+                // del grid y para que las conversiones en cola usen la misma ruta).
+                $media->media_folder_id = $this->currentFolderId;
+                $media->save();
+
+                Storage::disk($item['disk'])->delete($item['path']);
+            }
+        } finally {
+            UploadContext::clear();
         }
 
         $this->dispatch('refresh-media-grid');
+
+        // Cierra el modal del uploader (si está montado como header action).
+        if (method_exists($this, 'unmountAction')) {
+            $this->unmountAction();
+        }
     }
 
     #[On('set-folder')]

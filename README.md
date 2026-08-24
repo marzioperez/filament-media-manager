@@ -261,6 +261,64 @@ sobrescriben el mismo objeto y producen siempre la misma URL, que es lo que
 necesitas en un seeder cuando esa URL queda embebida en otros registros. Pásalo
 a `true` en importadores donde cada fichero deba conservarse por separado.
 
+#### Buscar un recurso ya existente
+
+`add()` y `url()` **suben** un fichero. Para leer lo que ya está en la biblioteca
+—sin volver a subirlo— están `find()` y `findUrl()`, que lo localizan por su
+ruta `carpeta/nombre`:
+
+```php
+use Marzio\MediaManager\Facades\MediaManager;
+
+// El recurso (Media), o null si no existe
+$media = MediaManager::find('marca/logo.svg');
+$url = $media?->getUrl();
+
+// Directamente la URL
+$url = MediaManager::findUrl('marca/logo.svg');
+
+// En la raíz del vault
+$media = MediaManager::find('logo.svg');
+
+// Carpeta explícita: equivalente a la primera forma
+$media = MediaManager::find('logo.svg', folder: 'marca');
+
+// Carpetas anidadas
+$url = MediaManager::findUrl('banners/home/portada.jpg');
+
+// Una conversión concreta
+$url = MediaManager::findUrl('fotos/retrato.jpg', conversion: 'thumb');
+```
+
+El nombre admite las dos formas, **con y sin extensión**. Spatie guarda el
+nombre completo en `file_name` y el nombre sin extensión en `name`, y la
+búsqueda contrasta ambos, así que `find('marca/logo')` y `find('marca/logo.svg')`
+devuelven el mismo recurso.
+
+Si pides una conversión que todavía no se ha generado, `findUrl()` devuelve la
+URL del original en lugar de una ruta rota.
+
+#### La variante que falla ruidosamente
+
+En un seeder, un `null` inadvertido se embebe en el contenido y el problema
+aparece mucho después, como una imagen rota difícil de rastrear. `findOrFail()`
+corta ahí mismo:
+
+```php
+$url = MediaManager::findOrFail('marca/logo.svg')->getUrl();
+// RuntimeException: Media Manager: no se encontró el recurso "marca/logo.svg".
+```
+
+#### Subir o reutilizar
+
+Un patrón habitual en seeders que se ejecutan más de una vez: usar el recurso si
+ya está, subirlo si no.
+
+```php
+$url = MediaManager::findUrl('marca/logo.svg')
+    ?? MediaManager::url('logo.svg', folder: 'marca', disk: 'seed-assets');
+```
+
 #### Trabajar con carpetas
 
 ```php

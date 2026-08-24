@@ -130,6 +130,114 @@ class MediaManagerService {
     }
 
     /**
+     * Busca un recurso ya existente por su ruta "carpeta/nombre".
+     *
+     * Pensado para leer desde código lo que ya está en la biblioteca —seeders,
+     * comandos, importadores— sin volver a subir el fichero.
+     *
+     *     MediaManager::find('marca/logo.svg');
+     *     MediaManager::find('logo.svg');                  // en la raíz
+     *     MediaManager::find('logo.svg', folder: 'marca'); // equivalente al primero
+     *
+     * El nombre admite las dos formas, con y sin extensión: Spatie guarda el
+     * nombre completo en `file_name` y el nombre sin extensión en `name`, y aquí
+     * se contrastan ambos. Así `find('marca/logo')` y `find('marca/logo.svg')`
+     * devuelven el mismo recurso.
+     *
+     * @param  string       $path    Ruta del recurso. El último tramo es el nombre.
+     * @param  string|null  $folder  Carpeta explícita; si se pasa, $path es solo el nombre.
+     * @param  Model|null   $vault   Vault donde buscar. Por defecto, el del VaultResolver.
+     */
+    public function find(string $path, ?string $folder = null, ?Model $vault = null): ?Media {
+        $path = trim($path, '/');
+
+        // Sin carpeta explícita, el último tramo de la ruta es el nombre.
+        if (is_null($folder) && str_contains($path, '/')) {
+            $folder = Str::beforeLast($path, '/');
+            $name = Str::afterLast($path, '/');
+        } else {
+            $name = $path;
+        }
+
+        if ($name === '') {
+            return null;
+        }
+
+        $vault ??= VaultResolver::model();
+
+        $mediaFolder = filled($folder) ? MediaFolderResolver::find($folder, $vault) : null;
+
+        // Se pidió una carpeta que no existe: no hay nada que buscar dentro.
+        if (filled($folder) && is_null($mediaFolder)) {
+            return null;
+        }
+
+        /** @var class-string<Media> $model */
+        $model = config('media-library.media_model', Media::class);
+
+        return $model::query()
+            ->where('model_type', $vault::class)
+            ->where('model_id', $vault->getKey())
+            ->where('collection_name', config('media-manager.collection', 'assets'))
+            ->where('media_folder_id', $mediaFolder?->id)
+            ->where(fn ($query) => $query->where('file_name', $name)->orWhere('name', $name))
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
+     * Igual que find(), pero lanza una excepción si no encuentra el recurso.
+     *
+     * Es la variante recomendada en seeders: si el asset falta, un null se
+     * embebe en el contenido y el fallo aparece mucho después, como una imagen
+     * rota difícil de rastrear. Aquí revienta en el punto exacto.
+     *
+     * @throws \RuntimeException
+     */
+    public function findOrFail(string $path, ?string $folder = null, ?Model $vault = null): Media {
+        $media = $this->find($path, $folder, $vault);
+
+        if (is_null($media)) {
+            throw new \RuntimeException(sprintf(
+                'Media Manager: no se encontró el recurso "%s"%s.',
+                $path,
+                filled($folder) ? sprintf(' en la carpeta "%s"', $folder) : ''
+            ));
+        }
+
+        return $media;
+    }
+
+    /**
+     * URL de un recurso ya existente, buscándolo por su ruta.
+     *
+     * Devuelve null si no existe. No confundir con url(), que SUBE un fichero y
+     * devuelve la URL del recurso recién creado.
+     *
+     *     $url = MediaManager::findUrl('marca/logo.svg');
+     *     $url = MediaManager::findUrl('fotos/portada.jpg', conversion: 'thumb');
+     *
+     * @param  string  $conversion  Conversión a devolver. Si aún no está generada,
+     *                              se devuelve la URL del original en vez de una rota.
+     */
+    public function findUrl(
+        string $path,
+        ?string $folder = null,
+        ?Model $vault = null,
+        string $conversion = '',
+    ): ?string {
+        $media = $this->find($path, $folder, $vault);
+
+        if (is_null($media)) {
+            return null;
+        }
+
+        return $conversion !== '' && $media->hasGeneratedConversion($conversion)
+            ? $media->getUrl($conversion)
+            : $media->getUrl();
+    }
+
+    /**
      * Tronco común de add() y addFromFile().
      *
      * El orden importa: la carpeta debe comunicarse al PathGenerator ANTES de

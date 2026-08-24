@@ -5,7 +5,26 @@ Todos los cambios relevantes de este paquete se documentan en este archivo.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y el versionado se adhiere a [SemVer](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [3.3.1]
+
+### Añadido
+
+- **Búsqueda de recursos ya existentes** en la API programática, para leer desde
+  código lo que ya está en la biblioteca sin volver a subirlo:
+  - `find()` — localiza un recurso por su ruta `carpeta/nombre` y devuelve el
+    `Media`, o `null` si no existe. El nombre admite las dos formas, con y sin
+    extensión, porque se contrastan `file_name` y `name`.
+  - `findUrl()` — atajo que devuelve la URL directamente, con soporte para pedir
+    una conversión concreta. Si esa conversión aún no se generó, devuelve la URL
+    del original en lugar de una ruta rota.
+  - `findOrFail()` — igual que `find()` pero lanza `RuntimeException`. Pensado
+    para seeders, donde un `null` silencioso se embebe en el contenido y el fallo
+    aparece mucho después como una imagen rota.
+
+  La búsqueda respeta el scope del vault y la colección configurada, de modo que
+  dos vaults pueden tener un `marca/logo.svg` cada uno sin pisarse.
+
+## [3.3.0]
 
 ### Añadido
 
